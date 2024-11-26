@@ -3,10 +3,10 @@ import numpy as np
 from .mutation import Mutation
 
 @dataclass
-class VocabularyMutations(Mutation):
+class AlphabetMutation(Mutation):
     vocabulary_length: int
 
-class RandomGeneMutation(VocabularyMutations):
+class RandomGeneMutation(AlphabetMutation):
     def __post_init__(self):
         self.p_mutation = self.average_mutation_rate / self.vocabulary_length
 
