@@ -1,19 +1,13 @@
-
 from typing import Callable, Union, Tuple, Any
 
 import numpy as np
 
-from .evolutive import Evolutive
+from .evolutive import Evolutive, gene_type
 from ..mutation import ALPHABET_MUTATION, MultiMutation
 from ..crossover import ALPHABET_CROSSOVER, MultiCrossover
 
-def gene_type(alphabet_size:int):
-    size = 8
-    while alphabet_size > 1 << size and size != 64:
-        size *= 2
-    return f'uint{size}'
 
-class VocabularyEvolutive(Evolutive):
+class AlphabetEvolutive(Evolutive):
     def __init__(self,
                  alphabet: Tuple,
                  cromolength: Union[int, Tuple[int]],

@@ -8,6 +8,12 @@ from random import sample
 from ..crossover import Crossover, MultiCrossover
 from ..mutation import Mutation, MultiMutation
 
+def gene_type(alphabet_size:int):
+    size = 8
+    while alphabet_size > 1 << size and size != 64:
+        size *= 2
+    return f'uint{size}'
+
 @dataclass
 class Evolutive(ABC):
     n_individuals: int
