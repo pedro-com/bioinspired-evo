@@ -12,15 +12,13 @@ class SplitMergeCrossover(Crossover):
             
         Returns:
             Tuple of two offspring created by splitting and merging parents
-            """
+        """
         # Make sure arrays are of same length
         if len(ind1) != len(ind2):
-            raise ValueError("Parents must be same length")
-            
+            raise ValueError("Parents must be same length")  
         # Select random split point
         split_point = np.random.randint(1, len(ind1), 2)
-
-        
+    
         # Create offspring by swapping segments
         child1 = np.concatenate((ind1[:split_point[0]], ind2[split_point[0]:]))
         child2 = np.concatenate((ind2[:split_point[1]], ind1[split_point[1]:]))

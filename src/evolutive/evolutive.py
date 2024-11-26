@@ -11,15 +11,16 @@ from ..mutation import Mutation, MultiMutation
 @dataclass
 class Evolutive(ABC):
     n_individuals: int
-    fit: Callable
     mutation: Union[Mutation, MultiMutation]
     crossover: Union[Crossover, MultiCrossover]
-    fenotype: Callable = lambda cromosome: cromosome
+    phenotype: Callable = lambda cromosome: cromosome
     elitist_individuals: int = 0
     maximize: bool = True
-    use_multithread: bool = False
     # Selection
+    # p_normalize: float = 0.
     T_selection: int = 2
+    # Multithread
+    use_multithread: bool = False
 
     @classmethod
     def get_mutation(cls, mutation_name: Union[str, Tuple[str]], mutation_dict: Dict[str, Type[Mutation]],
@@ -47,12 +48,12 @@ class Evolutive(ABC):
         crossovers = (crossover_dict[cross_name](**crossover_kwargs) for cross_name in crossover_name)
         return MultiCrossover(*crossovers)
 
-    def fit_sort(self, population: Tuple):
+    def fit_sort(self, fit: Callable, population: Tuple):
         """
-        Applies the fit function to the fenotypes of the cromosomes and sorts by leaving the values to optimize
+        Applies the fit function to the phenotypes of the cromosomes and sorts by leaving the values to optimize
         at the end of the list.
         """
-        fit = lambda cromosome : self.fit(self.apply_fenotype(cromosome))
+        fit = lambda cromosome : self.fit(self.apply_phenotype(cromosome))
         if not self.use_multithread:
             fit_values = map(lambda cromosome: (cromosome, fit(cromosome)), population)
         else:
@@ -80,20 +81,20 @@ class Evolutive(ABC):
             best_cromosome = self.best_individual(best_cromosome, cromosome)
         return best_cromosome[0]
 
-    def evolve(self, n_generations:int, n_populations:int=1):
+    def evolve(self, fit: Callable, n_generations:int, n_populations:int=1):
         """
         Evolves the individuals over n_generations, and if n_populations is greater than 1, applis the process over
         n_generations.
         """
         if n_populations > 1:
             with Pool(n_populations) as p:
-                fenotypes = p.map(lambda : self.evolve(n_generations), [n_generations]*n_populations)
-            return sorted(fenotypes, lambda v: self.fit(v), reverse=not self.maximize)[-1]
+                phenotypes = p.map(lambda : self.evolve(n_generations), [n_generations]*n_populations)
+            return sorted(phenotypes, lambda v: fit(v), reverse=not self.maximize)[-1]
         population = self.creation()
         best_individual = None
         for generation in range(n_generations): # TODO Add logging
             # Obtain fit for the population
-            fit_population = self.fit_sort(population)
+            fit_population = self.fit_sort(fit, population)
             # Obtain best individual
             best_individual = self.best_individual(best_individual, fit_population[-1])
             # Selection + Crossover + Mutation
@@ -107,11 +108,11 @@ class Evolutive(ABC):
             # Add elitist individuals
             for idx in range(self.elitist_individuals):
                 population[-idx] = fit_population[-idx][0]
-        return self.apply_fenotype(best_individual[0])
+        return self.apply_phenotype(best_individual[0])
 
     @abstractmethod
-    def apply_fenotype(self, cromosome: Any):
-        """Applies the fenotype to the passed cromosome"""
+    def apply_phenotype(self, cromosome: Any):
+        """Applies the phenotype to the passed cromosome"""
         pass
 
     @abstractmethod
