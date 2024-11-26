@@ -1,7 +1,7 @@
 from .evolutive import Evolutive
-from .vocabulary import VocabularyEvolutive
+from .alphabet import AlphabetEvolutive
 
 __all__ = [
     "Evolutive",
-    "VocabularyEvolutive"
+    "AlphabetEvolutive"
 ]

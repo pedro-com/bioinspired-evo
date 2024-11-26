@@ -1,8 +1,12 @@
 from typing import Dict, Type
 from .crossover import Crossover, MultiCrossover
-from .vocabulary import SplitMergeCrossover
+from .alphabet import SplitMergeCrossover
 
 ALPHABET_CROSSOVER: Dict[str, Type[Crossover]]= {
+    "split-merge": SplitMergeCrossover
+}
+
+PERMUTATION_CROSSOVER: Dict[str, Type[Crossover]]= {
     "split-merge": SplitMergeCrossover
 }
 

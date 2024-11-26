@@ -6,6 +6,10 @@ ALPHABET_MUTATION: Dict[str, Type[AlphabetMutation]] = {
     "random-gene": RandomGeneMutation
 }
 
+PERMUTATION_MUTATION: Dict[str, Type[AlphabetMutation]] = {
+    "random-gene": RandomGeneMutation
+}
+
 __all__ = [
     "Mutation",
     "MultiMutation",
