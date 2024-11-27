@@ -5,7 +5,6 @@ Evolución basada en métodos bioinspirados
     - Random split: Punto aleatorio y juntar dos listas.
     - Uniform crossover: Intercambiar valor a valor cada uno de los cromosomas.
     - Half cromosome Fixed positions in Ind1, add from INd2 the rest of the positions.
-    - N-random Fixed positions in Ind1, add from INd2 the rest of the positions.
 
 * Mutations:
     - Random gene mutation
