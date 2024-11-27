@@ -13,3 +13,4 @@ class SwapMutation(mutation.Mutation):
                 idx1, idx2 = idx2, idx1
             indv[idx1+1:idx2] = indv[idx1+1:idx2][::-1]
         
+        return indv

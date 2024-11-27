@@ -26,4 +26,30 @@ class SplitMergeCrossover(Crossover):
         return child1, child2
 
 
-
+class UniformCrossover(Crossover):
+    def crossover(self, ind1: np.ndarray, ind2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Perform uniform crossover between two parent individuals.
+        
+        Args:
+            ind1: First parent individual (numpy array)
+            ind2: Second parent individual (numpy array)
+            
+        Returns:
+            Tuple of two offspring created by uniform crossover
+        """
+        # Make sure arrays are of same length
+        if len(ind1) != len(ind2):
+            raise ValueError("Parents must be same length")  
+        
+        # Create copies of parents
+        child1 = np.copy(ind1)
+        child2 = np.copy(ind2)
+        
+        # Generate random boolean mask
+        mask = np.random.random(len(ind1)) < 0.5
+        
+        # Swap elements according to mask
+        child1[mask] = ind2[mask]
+        child2[mask] = ind1[mask]
+        
+        return child1, child2

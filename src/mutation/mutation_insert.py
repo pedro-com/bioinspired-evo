@@ -13,5 +13,6 @@ class SwapMutation(mutation.Mutation):
             indv = np.delete(indv, idx1)
             idx2 = np.random.choice(range(len(indv)+1))
             indv = np.insert(indv, idx2, gene)
-            return indv
+        
+        return indv
         
