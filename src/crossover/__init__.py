@@ -6,9 +6,6 @@ ALPHABET_CROSSOVER: Dict[str, Type[Crossover]]= {
     "split-merge": SplitMergeCrossover
 }
 
-PERMUTATION_CROSSOVER: Dict[str, Type[Crossover]]= {
-    "split-merge": SplitMergeCrossover
-}
 
 __all__ = [
     "Crossover",

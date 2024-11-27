@@ -39,7 +39,14 @@ class AlphabetEvolutive(Evolutive):
         }
         mutation = self.get_mutation(mutation, ALPHABET_MUTATION, mutation_dict)
         super().__init__(
-            n_individuals, mutation, crossover, phenotype, elitist_individuals, maximize, use_multithread, T_selection
+            n_individuals=n_individuals,
+            mutation=mutation,
+            crossover=crossover,
+            phenotype=phenotype,
+            elitist_individuals=elitist_individuals,
+            maximize=maximize,
+            use_multithread=use_multithread,
+            T_selection=T_selection
         )
     
     def apply_phenotype(self, cromosome: np.ndarray):

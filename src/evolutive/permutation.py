@@ -5,12 +5,11 @@ import numpy as np
 
 from .alphabet import Evolutive, gene_type
 from ..mutation import PERMUTATION_MUTATION
-from ..crossover import PERMUTATION_CROSSOVER
+from ..crossover import ALPHABET_CROSSOVER
 
 class PermutationEvolutive(Evolutive):
     def __init__(self,
                  alphabet: Tuple,
-                 cromolength: Union[int, Tuple[int]],
                  n_individuals: int,
                  mutation: Union[str, Tuple[str]] = "random-gene",
                  crossover: Union[str, Tuple[str]] = "split-merge",
@@ -24,13 +23,12 @@ class PermutationEvolutive(Evolutive):
                  ):
         self.gene_type = gene_type(len(alphabet))
         self.alphabet = np.array(alphabet)
-        self.cromolength = cromolength
         # Init Crossover
         crossover_dict = {
             "p_crossover": p_crossover,
             "gene_type": self.gene_type
         }
-        crossover = self.get_crossover(crossover, PERMUTATION_CROSSOVER, crossover_dict)
+        crossover = self.get_crossover(crossover, ALPHABET_CROSSOVER, crossover_dict)
         # Init mutation
         mutation_dict = {
             "average_mutation_rate": average_mutation_rate,
@@ -39,7 +37,14 @@ class PermutationEvolutive(Evolutive):
         }
         mutation = self.get_mutation(mutation, PERMUTATION_MUTATION, mutation_dict)
         super().__init__(
-            n_individuals, mutation, crossover, phenotype, elitist_individuals, maximize, use_multithread, T_selection
+            n_individuals=n_individuals,
+            mutation=mutation,
+            crossover=crossover,
+            phenotype=phenotype,
+            elitist_individuals=elitist_individuals,
+            maximize=maximize,
+            use_multithread=use_multithread,
+            T_selection=T_selection
         )
     
     def apply_phenotype(self, cromosome: np.ndarray):
@@ -47,7 +52,7 @@ class PermutationEvolutive(Evolutive):
 
     def creation(self):
         def random_shuffle():
-            permutation = np.arange(self.alphabet[0], dtype=self.gene_type)
+            permutation = np.arange(self.alphabet.shape[0], dtype=self.gene_type)
             np.random.shuffle(permutation)
             return permutation
         return [random_shuffle() for _ in range(self.n_individuals)]

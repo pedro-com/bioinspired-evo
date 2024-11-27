@@ -10,4 +10,5 @@ class SwapMutation(mutation.Mutation):
         if random.random() < self.average_mutation_rate:
             indx1, indx2 = np.random.choice(range(len(indv)), size= 2)
             indv[indx1], indv[indx2] = indv[indx2], indv[indx1]
-            return indv
+            
+        return indv
