@@ -4,6 +4,8 @@ from typing import Tuple, Callable, Any, Union, List, Dict, Type
 from dataclasses import dataclass
 from multiprocessing import Pool
 from random import sample
+from scipy.spatial.distance import pdist
+import matplotlib.pyplot as plt
 
 from ..crossover import Crossover, MultiCrossover
 from ..mutation import Mutation, MultiMutation
@@ -95,6 +97,7 @@ class Evolutive(ABC):
             return sorted(phenotypes, lambda v: fit(v), reverse=not self.maximize)[-1]
         population = self.creation()
         best_individual = None
+        diversity_history = []
         for generation in range(n_generations): # TODO Add logging
             # Obtain fit for the population
             fit_population = self.fit_sort(fit, population)
@@ -111,6 +114,16 @@ class Evolutive(ABC):
             # Add elitist individuals
             for idx in range(self.elitist_individuals):
                 population[-idx] = fit_population[-idx][0]
+            diversity_history.append(np.mean(pdist(population, metric='euclidean')))
+        # Plotting the history graph
+        plt.figure(figsize=(10, 5))
+        plt.plot(list(range(n_generations)), diversity_history, marker='o', linestyle='-', color='b')
+        plt.title('Diversity across generations')
+        plt.xlabel('Generations')
+        plt.ylabel('Diversity')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
         return self.apply_phenotype(best_individual[0])
 
     @abstractmethod
