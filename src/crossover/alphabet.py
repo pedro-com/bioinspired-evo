@@ -89,5 +89,4 @@ class HalfFixedCrossover(Crossover):
         child1[np.logical_not(mask)] = ind2[np.isin(ind2, child1[mask], invert=True, assume_unique=True)]
         child2[np.logical_not(mask)] = ind1[np.isin(ind1, child2[mask], invert=True, assume_unique=True)]   
 
-
         return child1, child2

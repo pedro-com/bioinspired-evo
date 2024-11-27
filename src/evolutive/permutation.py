@@ -5,14 +5,14 @@ import numpy as np
 
 from .alphabet import Evolutive, gene_type
 from ..mutation import PERMUTATION_MUTATION
-from ..crossover import ALPHABET_CROSSOVER
+from ..crossover import PERMUTATION_CROSSOVER
 
 class PermutationEvolutive(Evolutive):
     def __init__(self,
                  alphabet: Tuple,
                  n_individuals: int,
-                 mutation: Union[str, Tuple[str]] = "random-gene",
-                 crossover: Union[str, Tuple[str]] = "split-merge",
+                 mutation: Union[str, Tuple[str]] = "swap-gene",
+                 crossover: Union[str, Tuple[str]] = "half-fixed",
                  p_crossover: float = 0.7,
                  average_mutation_rate: float = 1.,
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
@@ -28,7 +28,7 @@ class PermutationEvolutive(Evolutive):
             "p_crossover": p_crossover,
             "gene_type": self.gene_type
         }
-        crossover = self.get_crossover(crossover, ALPHABET_CROSSOVER, crossover_dict)
+        crossover = self.get_crossover(crossover, PERMUTATION_CROSSOVER, crossover_dict)
         # Init mutation
         mutation_dict = {
             "average_mutation_rate": average_mutation_rate,
