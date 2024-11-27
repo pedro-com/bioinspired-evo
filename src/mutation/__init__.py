@@ -1,13 +1,14 @@
 from .mutation import Mutation, MultiMutation
-from .alphabet import AlphabetMutation, RandomGeneMutation
+from .alphabet import AlphabetMutation, RandomGeneMutation, SwapMutation
 from typing import Dict, Type
 
 ALPHABET_MUTATION: Dict[str, Type[AlphabetMutation]] = {
-    "random-gene": RandomGeneMutation
+    "random-gene": RandomGeneMutation,
+    "swap-mutation": SwapMutation
 }
 
 PERMUTATION_MUTATION: Dict[str, Type[AlphabetMutation]] = {
-    "random-gene": RandomGeneMutation
+    "swap-mutation": SwapMutation
 }
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "MultiMutation",
     "AlphabetMutation",
     "RandomGeneMutation",
+    "SwapMutation",
     ALPHABET_MUTATION
 ]
