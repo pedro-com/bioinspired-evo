@@ -16,6 +16,10 @@ class SplitMergeCrossover(Crossover):
         # Make sure arrays are of same length
         if len(ind1) != len(ind2):
             raise ValueError("Parents must be same length")  
+        
+        if np.random.random() > self.p_crossover:
+            return ind1, ind2
+        
         # Select random split point
         split_point = np.random.randint(1, len(ind1), 2)
     
@@ -39,7 +43,10 @@ class UniformCrossover(Crossover):
         """
         # Make sure arrays are of same length
         if len(ind1) != len(ind2):
-            raise ValueError("Parents must be same length")  
+            raise ValueError("Parents must be same length")
+        
+        if np.random.random() > self.p_crossover:
+            return ind1, ind2
         
         # Create copies of parents
         child1 = np.copy(ind1)
@@ -68,6 +75,9 @@ class HalfFixedCrossover(Crossover):
         # Make sure arrays are of same length
         if len(ind1) != len(ind2):
             raise ValueError("Parents must be same length")  
+        
+        if np.random.random() > self.p_crossover:
+            return ind1, ind2
         
         # Create copies of parents
         child1 = np.copy(ind1)
