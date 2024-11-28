@@ -18,29 +18,23 @@ class RandomGeneMutation(AlphabetMutation):
 
 class SwapMutation(AlphabetMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
-        swaps = rng.randint(low=self.average_mutation_rate - 1, high=self.average_mutation_rate + 2)
-        random_swaps = rng.randint(low=0, high=self.vocabulary_length, size=(swaps, 2))
-        for swap in random_swaps:
-            indv[swap] = indv[np.flip(swap)]
+        swap = rng.randint(low=0, high=indv.shape[0], size=2)
+        indv[swap] = indv[np.flip(swap)]
         return indv
 
 class InsertMutation(AlphabetMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
-        inserts = rng.randint(low=self.average_mutation_rate - 1, high=self.average_mutation_rate + 2)
-        for _ in range(inserts):
-            idx1 = rng.randint(indv.shape[0])
-            gene = indv[idx1]
-            indv = np.delete(indv, idx1)
-            idx2 = rng.randint(indv.shape[0])
-            indv = np.insert(indv, idx2, gene)
+        idx1 = rng.randint(indv.shape[0])
+        gene = indv[idx1]
+        indv = np.delete(indv, idx1)
+        idx2 = rng.randint(indv.shape[0])
+        indv = np.insert(indv, idx2, gene)
         return indv
 
 class ToOptMutation(AlphabetMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
-        reverses = rng.randint(low=self.average_mutation_rate - 1, high=self.average_mutation_rate + 2)
-        for _ in range(reverses):
-            idx1, idx2 = rng.choice(range(indv.shape[0]), size=2)
-            if idx1 > idx2:
-                idx1, idx2 = idx2, idx1
-            indv[idx1+1:idx2] = indv[idx1+1:idx2][::-1]
+        idx1, idx2 = rng.randint(indv.shape[0], size=2)
+        if idx1 > idx2:
+            idx1, idx2 = idx2, idx1
+        indv[idx1+1:idx2] = indv[idx1+1:idx2][::-1]
         return indv

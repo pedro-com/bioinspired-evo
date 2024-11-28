@@ -15,6 +15,29 @@ def gene_type(alphabet_size:int):
     while alphabet_size > 1 << size and size != 64:
         size *= 2
     return f'uint{size}'
+def plot_evolution(evolution_dict: Dict[str, List], axs: Tuple[plt.Axes]=None):
+    assert axs is None or len(axs) != 2, "Invalid number of axes"
+    if axs is None:
+        fig, axs = plt.subplots(2, 1, figsize=(10, 5))
+        plt.subplots_adjust(hspace=0.5)
+    fit_styles = {
+        "min": "-r",
+        "mean": "-b",
+        "max": "g",
+        "best": "y"
+    }
+    axs[0].set_title("Fit across Generations")
+    for k_name, style in fit_styles.items():
+        axs[0].plot(evolution_dict[k_name], style, label=k_name.capitalize())
+    axs[0].legend()
+    axs[0].set_xlabel("Generations")
+    axs[0].set_ylabel("Fit score")
+    axs[0].grid(True)
+    axs[1].set_title("Diversity across Generations")
+    axs[1].plot(evolution_dict["diversity"], linestyle='-', color='b')
+    axs[1].set_xlabel("Generations")
+    axs[1].set_ylabel("Diversity")
+    axs[1].grid(True)
 
 @dataclass
 class Evolutive(ABC):
@@ -22,7 +45,7 @@ class Evolutive(ABC):
     mutation: Union[Mutation, MultiMutation]
     crossover: Union[Crossover, MultiCrossover]
     phenotype: Callable = lambda cromosome: cromosome
-    elitist_individuals: int = 0
+    elitism: bool = False
     maximize: bool = True
     # Selection
     # p_normalize: float = 0.
@@ -39,7 +62,7 @@ class Evolutive(ABC):
             return mutation_dict[mutation_name](**mutation_kwargs)
         assert all(mut_name in mutation_dict for mut_name in mutation_name), f"Invalid mutation name as its not in the passed mutation dictionary: {list(mutation_dict.keys())}"
         mutations = (mutation_dict[mut_name](**mutation_kwargs) for mut_name in mutation_name)
-        return MultiMutation(*mutations)
+        return MultiMutation(tuple(mutations))
 
     @classmethod
     def get_crossover(self, crossover_name: Union[str, Tuple[str]], crossover_dict: Dict[str, Type[Crossover]],
@@ -50,7 +73,7 @@ class Evolutive(ABC):
             return crossover_dict[crossover_name](**crossover_kwargs)
         assert all(cross_name in crossover_dict for cross_name in crossover_name), f"Invalid crossover name as its not in the passed crossover dictionary: {list(crossover_dict.keys())}"
         crossovers = (crossover_dict[cross_name](**crossover_kwargs) for cross_name in crossover_name)
-        return MultiCrossover(*crossovers)
+        return MultiCrossover(tuple(crossovers))
 
     def fit_sort(self, fit: Callable, population: Tuple):
         """
@@ -76,55 +99,56 @@ class Evolutive(ABC):
             return max(indv1, indv2, key=lambda v: v[1])
         return min(indv1, indv2, key=lambda v: v[1])
 
-    def select(self, fit_population: List):
+    def selection(self, fit_population: List):
         """
         Selects T random individuals from the population and obtains the one with the best values.
         """
-        T_sample = sample(fit_population, k=self.T_selection)
-        best_individual = T_sample[0]
-        for individual in T_sample[1:]:
-            best_individual = self.best_individual(best_individual, individual)
-        return best_individual[0]
+        def select():
+            T_sample = sample(fit_population, k=self.T_selection)
+            best_individual = T_sample[0]
+            for individual in T_sample[1:]:
+                best_individual = self.best_individual(best_individual, individual)
+            return best_individual[0]
+        return ((select(), select()) for _ in range(self.n_individuals // 2))
 
-    def evolve(self, fit: Callable, n_generations:int, n_populations:int=1):
+    def evolve(self, fit: Callable, n_generations:int):
         """
         Evolves the individuals over n_generations, and if n_populations is greater than 1, applis the process over
         n_generations.
         """
-        if n_populations > 1:
-            with Pool(n_populations) as p:
-                phenotypes = p.map(lambda : self.evolve(n_generations), [n_generations]*n_populations)
-            return sorted(phenotypes, lambda v: fit(v), reverse=not self.maximize)[-1]
-        population = self.creation()
         best_individual = None
-        diversity_history = []
-        for generation in range(n_generations): # TODO Add logging
+        population = self.creation()
+        evolution_dict = {name: [] for name in ("min", "mean", "max", "best", "diversity")}
+        for _ in range(n_generations):
             # Obtain fit for the population
             fit_population = self.fit_sort(fit, population)
-            # Obtain best individual
+                        # Obtain best individual
             best_individual = self.best_individual(best_individual, fit_population[-1])
+            # Metrics
+            evolution_dict["min"].append(fit_population[0][1])
+            evolution_dict["max"].append(fit_population[-1][1])
+            evolution_dict["mean"].append(np.mean([pop[1] for pop in fit_population]))
+            evolution_dict["best"].append(best_individual[1])
+            evolution_dict["diversity"].append(np.mean(pdist(population, metric='euclidean')))
+            if np.abs(fit_population[-1][1] - best_individual[1]) > 0.001:
+                a = 0
             # Selection + Crossover + Mutation
-            population = []
-            for _ in range(0, self.n_individuals, 2):
-                indv1, indv2 = self.crossover.crossover(self.select(fit_population), self.select(fit_population))
-                population.append(self.mutation.mutate(indv1))
-                population.append(self.mutation.mutate(indv2))
-            if self.n_individuals % 2 != 1: # For uneven populations
-                population.append(self.mutation.mutate(self.select(fit_population)))
+            new_population = []
+            for par1, par2 in self.selection(fit_population):
+                child1, child2 = self.crossover.crossover(par1, par2)
+                new_population.append(self.mutation.mutate(child1))
+                new_population.append(self.mutation.mutate(child2))
+            if self.n_individuals % 2 == 1: # For uneven populations
+                new_population.append(self.mutation.mutate(self.select(fit_population)))
             # Add elitist individuals
-            for idx in range(self.elitist_individuals):
-                population[-idx] = fit_population[-idx][0]
-            diversity_history.append(np.mean(pdist(population, metric='euclidean')))
-        # Plotting the history graph
-        plt.figure(figsize=(10, 5))
-        plt.plot(list(range(n_generations)), diversity_history, marker='o', linestyle='-', color='b')
-        plt.title('Diversity across generations')
-        plt.xlabel('Generations')
-        plt.ylabel('Diversity')
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-        return self.apply_phenotype(best_individual[0])
+            if self.elitism:
+                new_population[-1] = np.copy(best_individual[0])
+            population = new_population
+        return {
+            "best": self.apply_phenotype(best_individual[0]),
+            "last_generation": [self.apply_phenotype(crom) for crom in population],
+            "evolution_dict": evolution_dict
+        }
 
     @abstractmethod
     def apply_phenotype(self, cromosome: Any):

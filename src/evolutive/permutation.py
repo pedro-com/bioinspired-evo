@@ -16,7 +16,7 @@ class PermutationEvolutive(Evolutive):
                  p_crossover: float = 0.7,
                  average_mutation_rate: float = 1.,
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
-                 elitist_individuals: int = 0,
+                 elitism: bool = False,
                  maximize: bool = True,
                  use_multithread: bool = False,
                  T_selection: int = 2
@@ -41,7 +41,7 @@ class PermutationEvolutive(Evolutive):
             mutation=mutation,
             crossover=crossover,
             phenotype=phenotype,
-            elitist_individuals=elitist_individuals,
+            elitism=elitism,
             maximize=maximize,
             use_multithread=use_multithread,
             T_selection=T_selection
