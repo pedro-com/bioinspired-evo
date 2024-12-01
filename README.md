@@ -12,3 +12,5 @@ Evolución basada en métodos bioinspirados
 (1, 3), (4, 3), ....
     - Delete gene and insert random gene. OPT
     - To Opt: Random reverse.
+
+Reference Page: <http://www.tomaszgwiazda.com/blendX.htm>

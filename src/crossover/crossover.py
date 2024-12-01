@@ -10,12 +10,16 @@ class Crossover(ABC):
     gene_type: str
 
     @abstractmethod
-    def crossover(self, ind1: ndarray, ind2: ndarray) -> Tuple[ndarray, ndarray]:
+    def crossover(self, indv1: ndarray, indv2: ndarray) -> Tuple[ndarray, ndarray]:
         pass
 
 @dataclass
-class MultiCrossover:
+class MultiCrossover(ABC):
     crossovers: Tuple[Crossover]
 
-    def crossover(self, ind1: ndarray, ind2: ndarray) -> Tuple[ndarray, ndarray]:
-        return choice(self.crossovers).crossover(ind1, ind2)
+    def crossover(self, indv1: ndarray, indv2: ndarray) -> Tuple[ndarray, ndarray]:
+        pass
+
+class RandomCrossover(MultiCrossover):
+    def crossover(self, indv1: ndarray, indv2: ndarray) -> Tuple[ndarray, ndarray]:
+        return choice(self.crossovers).crossover(indv1, indv2)

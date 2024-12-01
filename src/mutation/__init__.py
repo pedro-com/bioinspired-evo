@@ -1,25 +1,44 @@
-from .mutation import Mutation, MultiMutation
-from .alphabet import AlphabetMutation, RandomGeneMutation, SwapMutation, InsertMutation, ToOptMutation
-from typing import Dict, Type
+from .mutation import Mutation, MultiMutation, RandomMutation
+from .sequence import SequenceMutation, SwapMutation, InsertMutation, ToOptMutation
+from .alphabet import AlphabetMutation, RandomGeneMutation, RandomLocalGeneMutation
+from .real import RealNumberMutation, RandomRangeMutation, RandomLocalMutation
+from typing import Dict, Type, Union
 
-ALPHABET_MUTATION: Dict[str, Type[AlphabetMutation]] = {
+MULTIMUTATION_DICT: Dict[str, Type[MultiMutation]] = {
+    "random": RandomMutation
+}
+
+ALPHABET_MUTATION: Dict[str, Type[Union[SequenceMutation, AlphabetMutation]]] = {
     "random-gene": RandomGeneMutation,
+    "random-local": RandomLocalGeneMutation,
     "swap-gene": SwapMutation,
     "insert-gene": InsertMutation,
     "to-opt": ToOptMutation
 }
 
-PERMUTATION_MUTATION: Dict[str, Type[AlphabetMutation]] = {
+REAL_MUTATION: Dict[str, Type[Union[SequenceMutation, RealNumberMutation]]] = {
+    "random-range": RandomRangeMutation,
+    "random-local": RandomLocalMutation,
     "swap-gene": SwapMutation,
     "insert-gene": InsertMutation,
     "to-opt": ToOptMutation
 }
 
 __all__ = [
-    "Mutation",
-    "MultiMutation",
-    "AlphabetMutation",
-    "RandomGeneMutation",
-    "SwapMutation",
-    ALPHABET_MUTATION
+    Mutation,
+    MultiMutation,
+    RandomMutation,
+    SequenceMutation,
+    SwapMutation,
+    InsertMutation,
+    ToOptMutation,
+    AlphabetMutation,
+    RandomGeneMutation,
+    RandomLocalGeneMutation,
+    RealNumberMutation,
+    RandomRangeMutation,
+    RandomLocalMutation,
+    MULTIMUTATION_DICT,
+    ALPHABET_MUTATION,
+    REAL_MUTATION
 ]

@@ -5,36 +5,29 @@ from .mutation import Mutation
 
 @dataclass
 class AlphabetMutation(Mutation):
+    """
+    Alphabet mutations are to be applied only on Alphabet type Evolutions. These mutations work on integer representations
+    of the vocabulary.
+    * `vocabulary_length`: Number of elements in the vocabulary.
+    """
     vocabulary_length: int
 
-class RandomGeneMutation(AlphabetMutation):
     def __post_init__(self):
+        assert 0. <= self.mutation_eps < 1, "Invalid mutation eps, it must be between 0 and 1"
         self.p_mutation = self.average_mutation_rate / self.vocabulary_length
+        self.eps = np.ceil(self.mutation_eps*self.vocabulary_length)
 
+class RandomGeneMutation(AlphabetMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
         mutation_mask = rng.random(indv.shape[0]) < self.p_mutation
         indv[mutation_mask] = rng.randint(0, self.vocabulary_length, size=mutation_mask.sum())
         return indv
 
-class SwapMutation(AlphabetMutation):
+class RandomLocalGeneMutation(AlphabetMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
-        swap = rng.randint(low=0, high=indv.shape[0], size=2)
-        indv[swap] = indv[np.flip(swap)]
+        mutation_mask = rng.random(indv.shape[0]) < self.p_mutation
+        indv[mutation_mask] = rng.randint(-self.eps, self.eps + 1, size=mutation_mask.sum())
+        indv[indv >= self.vocabulary_length] %= self.vocabulary_length
+        indv[indv < 0] += self.vocabulary_length
         return indv
-
-class InsertMutation(AlphabetMutation):
-    def mutate(self, indv: np.ndarray) -> np.ndarray:
-        idx1 = rng.randint(indv.shape[0])
-        gene = indv[idx1]
-        indv = np.delete(indv, idx1)
-        idx2 = rng.randint(indv.shape[0])
-        indv = np.insert(indv, idx2, gene)
-        return indv
-
-class ToOptMutation(AlphabetMutation):
-    def mutate(self, indv: np.ndarray) -> np.ndarray:
-        idx1, idx2 = rng.randint(indv.shape[0], size=2)
-        if idx1 > idx2:
-            idx1, idx2 = idx2, idx1
-        indv[idx1+1:idx2] = indv[idx1+1:idx2][::-1]
-        return indv
+    
