@@ -1,6 +1,7 @@
 import math
 from typing import Callable, Tuple
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import numpy as np
 
 def himmelblau(ch, onlyone=False):
@@ -55,10 +56,11 @@ def rosenbrock_ndim(x):
         sum += (a - x[i])**2 + b * (x[i+1] - x[i]**2)**2
     return sum
 
-def get_fit_function(function: Callable):
-	def fit(x):
-		return 1 / (1 + function(x))
-	return fit
+def get_fit_function(function: Callable, non_zero_divisor: bool = False):
+    def fit(x):
+        divisor_adjustment = 1e-10 if non_zero_divisor else 0 # Avoid division by zero when target == None
+        return 1 / (1 + function(x) + divisor_adjustment)
+    return fit
 
 def plot_contour(function: Callable, value_range: Tuple[int], points:int=400, marked_point: Tuple=None, figsize:Tuple=(12, 5)):
 	x = np.linspace(value_range[0], value_range[1], points)
@@ -77,3 +79,41 @@ def plot_contour(function: Callable, value_range: Tuple[int], points:int=400, ma
 	plt.xlabel('X')
 	plt.ylabel('Y')
 	plt.grid()
+
+
+def plot_contour_3d(function: Callable, value_range: Tuple[int], points: int = 400, marked_point: Tuple = None, title: str = ''):
+
+    x = np.linspace(value_range[0], value_range[1], points)
+    y = np.linspace(value_range[0], value_range[1], points)
+    X, Y = np.meshgrid(x, y)
+    Z = np.array([function((x, y)) for x, y in zip(np.ravel(X), np.ravel(Y))]).reshape(X.shape)
+
+    fig = go.Figure()
+    fig.add_trace(go.Surface(z=Z, x=X, y=Y, colorscale='Plasma', opacity=0.8))
+
+    if marked_point is not None:
+        z_marked = function(marked_point)
+        fig.add_trace(go.Scatter3d(
+            x=[marked_point[0]],
+            y=[marked_point[1]],
+            z=[z_marked],
+            mode='markers+text',
+            marker=dict(size=6, color='red'),
+            text=[f'({marked_point[0]:.2f}, {marked_point[1]:.2f}, {z_marked:.2f})'],
+            textposition="top center",
+			textfont=dict(size=10, color='black')  # Add text font properties
+        ))
+
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z',
+            aspectratio=dict(x=1.25, y=1.25, z=0.5)
+        ),
+        title=title,
+        margin=dict(l=0, r=0, b=0, t=40)
+    )
+
+    fig.show()
+
