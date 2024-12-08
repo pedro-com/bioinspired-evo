@@ -101,23 +101,27 @@ class Evolutive(ABC):
         select = lambda : self.select(fit_population)
         return ((select(), select()) for _ in range(self.n_individuals // 2))
 
-    def evolve(self, fit: Callable, n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False):
+    def evolve(self, fit: Callable, n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False, seed_population: List[np.ndarray]=None):
         """
         Evolves the individuals over n_generations, and if n_populations is greater than 1, applies the process over
         n_generations.
         """
-        best_individual = None
-        population = self.creation()
+        if seed_population is None:
+            population = self.creation()
+        elif len(seed_population) < self.n_individuals:
+            population = seed_population + self.creation()[:self.n_individuals - len(seed_population)]
+        else:
+            population = sample(seed_population, self.n_individuals)
         if obtain_metrics:
             evolution_metrics = {
                 metric: {name: np.zeros(n_generations, dtype=np.float64) for name in ("min", "mean", "max", "best")}
                 for metric in ("fit", "diversity")
             }
+        # Obtain fit for the population
+        fit_population = self.fit_sort(fit, population)
+        # Obtain best individual
+        best_individual = fit_population[-1]
         for generation in range(n_generations):
-            # Obtain fit for the population
-            fit_population = self.fit_sort(fit, population)
-            # Obtain best individual
-            best_individual = self.best_individual(best_individual, fit_population[-1])
             # Metrics
             if obtain_metrics:
                 for metric, values in self.calculate_metrics(best_individual, fit_population).items():
@@ -127,24 +131,28 @@ class Evolutive(ABC):
             if trace != 0 and generation % trace == 0:
                 print(f"Generation {generation:8d} | Best Fit: {best_individual[1]:4.4f} | Mean Fit: {evolution_metrics['fit']['mean'][generation]:4.4f}")
             # Selection + Crossover + Mutation
-            new_population = []
+            population = []
             for par1, par2 in self.selection(fit_population):
                 child1, child2 = self.crossover.crossover(par1, par2)
-                new_population.append(self.mutation.mutate(child1))
-                new_population.append(self.mutation.mutate(child2))
+                population.append(self.mutation.mutate(child1))
+                population.append(self.mutation.mutate(child2))
             # For uneven populations
             if self.n_individuals % 2 == 1:
-                new_population.append(self.mutation.mutate(self.select(fit_population)))
+                population.append(self.mutation.mutate(self.select(fit_population)))
             # Add elitist individuals
             if self.elitism:
-                new_population[-1] = np.copy(best_individual[0])
-            population = new_population
+                population[-1] = np.copy(best_individual[0])
+            # Obtain fit for the population
+            fit_population = self.fit_sort(fit, population)
+            # Obtain best individual
+            best_individual = self.best_individual(best_individual, fit_population[-1])
             if target is not None and ((self.maximize and best_individual[1] >= target) or (not self.maximize and best_individual[1] <= target)):
                 break
         if trace != 0:
             print(f"Generation {generation + 1:8d} | Best Fit: {best_individual[1]:4.4f} | Mean Fit: {evolution_metrics['fit']['mean'][generation]:4.4f}")
         results = {
             "best": self.apply_phenotype(best_individual[0]),
+            "best_cromosome": best_individual[0],
             "population": population,
             "last_generation": [self.apply_phenotype(crom) for crom in population],
         }
@@ -200,3 +208,34 @@ class Evolutive(ABC):
     def creation(self):
         """Creates an random population from the gene variation"""
         pass
+
+@dataclass
+class ProgressiveEvolutive:
+    evolutions: Tuple[Evolutive, ...]
+    pop_to_reintroduce: float = 0.2
+
+    def evolve(self, fit: Callable, n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False):
+        gen_per_evolution = n_generations // len(self.evolutions)
+        print("Evolutive 1:")
+        results = self.evolutions[0].evolve(fit, gen_per_evolution, target, trace, obtain_metrics)
+        evolution_metrics = []
+        for idx, evo in enumerate(self.evolutions[1:], 2):
+            seed_population = ([] if self.pop_to_reintroduce == 0. else 
+                               sample(results["population"], int(self.pop_to_reintroduce*len(results["population"]))))
+            seed_population.append(results["best_cromosome"])
+            if obtain_metrics:
+                evolution_metrics.append(results["evolution_metrics"])
+            print(f"Evolutive {idx}:")
+            results = evo.evolve(fit, gen_per_evolution, target, trace, obtain_metrics, seed_population)
+        if obtain_metrics:
+            evolution_metrics.append(results["evolution_metrics"])
+            results["evolution_metrics"] = evolution_metrics
+        return results
+    
+    def plot_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None, figsize=(12, 5)):
+        fig, axs = plt.subplots(len(self.evolutions), 2, figsize=figsize)
+        plt.subplots_adjust(hspace=1.)
+        for idx, ax_line in enumerate(axs):
+            metric = evolution_metrics[idx]
+            for idx, (metric_name, metric) in enumerate(metric.items()):
+                plot_metric(ax_line[idx], metric_name, metric)
