@@ -25,7 +25,7 @@ def visualize_queens_board(queen_positions: np.ndarray):
     
     # Draw the queens
     for col, row in enumerate(queen_positions):
-        ax.add_patch(plt.Circle((col + 0.5, N - row - 0.5), 0.3, color='red', ec='black', lw=2))
+        ax.add_patch(plt.Circle((col + 0.5, N - row - 0.5), 0.3, color='red', ec='red', lw=2))
     
     ax.set_xlim(0, N)
     ax.set_ylim(0, N)
