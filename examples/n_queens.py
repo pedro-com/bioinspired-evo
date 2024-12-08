@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 def fit_queen(queen_positions: np.ndarray):
     N = queen_positions.shape[0]
@@ -10,11 +11,29 @@ def fit_queen(queen_positions: np.ndarray):
         penalization += (change[:, 0] == -change[:, 1]).sum()
     return penalization - 2*N
 
-def print_queens(queen_positions: np.ndarray):
-    N = queen_positions.shape[0]
-    for pos in queen_positions:
-        queen_line = " | ".join("Q" if k == pos else "+" for k in range(N))
-        print(f"|{queen_line}|")
+def visualize_queens_board(queen_positions: np.ndarray):
+
+    N = len(queen_positions)
+    
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Draw the chessboard
+    for row in range(N):
+        for col in range(N):
+            color = 'lightgray' if (row + col) % 2 == 0 else 'darkgray'
+            ax.add_patch(plt.Rectangle((col, N - row - 1), 1, 1, color=color, ec="black"))
+    
+    # Draw the queens
+    for col, row in enumerate(queen_positions):
+        ax.add_patch(plt.Circle((col + 0.5, N - row - 0.5), 0.3, color='red', ec='black', lw=2))
+    
+    ax.set_xlim(0, N)
+    ax.set_ylim(0, N)
+    ax.set_aspect('equal')
+    ax.axis('off')  # Hide the axis
+
+    ax.set_title(f'{N}-Queens Solution', fontsize=16)
+
 
 '''
 0 Q 0 0 0
