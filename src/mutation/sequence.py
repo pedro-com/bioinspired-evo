@@ -6,9 +6,6 @@ from .mutation import Mutation
 class SequenceMutation(Mutation):
     def __init__(self, average_mutation_rate: float, mutation_eps: float, gene_type: str, **kwargs):
         super().__init__(average_mutation_rate, mutation_eps, gene_type)
-    
-    def p_mutation(self, indv: np.ndarray):
-        return self.average_mutation_rate / indv.shape[0]
 
 class SwapMutation(SequenceMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:

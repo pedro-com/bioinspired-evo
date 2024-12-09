@@ -11,22 +11,39 @@ def fit_queen(queen_positions: np.ndarray):
         penalization += (change[:, 0] == -change[:, 1]).sum()
     return penalization - 2*N
 
-def visualize_queens_board(queen_positions: np.ndarray):
+def visualize_queens_board(queen_positions: np.ndarray, figsize=(12, 6), with_diagonals: bool=True):
 
     N = len(queen_positions)
     
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=figsize)
     
     # Draw the chessboard
     for row in range(N):
         for col in range(N):
-            color = 'lightgray' if (row + col) % 2 == 0 else 'darkgray'
+            # color = 'lightgray' if (row + col) % 2 == 0 else 'darkgray'
+            color = 'white' if (row + col) % 2 == 0 else 'black'
             ax.add_patch(plt.Rectangle((col, N - row - 1), 1, 1, color=color, ec="black"))
     
+    cmap = plt.get_cmap("hsv")
     # Draw the queens
     for col, row in enumerate(queen_positions):
-        ax.add_patch(plt.Circle((col + 0.5, N - row - 0.5), 0.3, color='red', ec='red', lw=2))
-    
+        queen_color = cmap(col / N) if with_diagonals else 'red'
+        ax.add_patch(plt.Circle((col + 0.5, N - row - 0.5), 0.3, color=queen_color, ec=queen_color, lw=2))
+        if not with_diagonals:
+            continue
+        # Draw diagonal lines
+        for offset in range(1, N):
+            # Positive slope diagonal (\ direction)
+            if 0 <= col + offset < N and 0 <= row + offset < N:
+                ax.plot([col + 0.5, col + offset + 0.5], [N - row - 0.5, N - (row + offset) - 0.5], color=queen_color, linestyle='-', lw=0.5)
+            if 0 <= col - offset < N and 0 <= row - offset < N:
+                ax.plot([col + 0.5, col - offset + 0.5], [N - row - 0.5, N - (row - offset) - 0.5], color=queen_color, linestyle='-', lw=0.5)
+
+            # Negative slope diagonal (/ direction)
+            if 0 <= col + offset < N and 0 <= row - offset < N:
+                ax.plot([col + 0.5, col + offset + 0.5], [N - row - 0.5, N - (row - offset) - 0.5], color=queen_color, linestyle='-', lw=0.5)
+            if 0 <= col - offset < N and 0 <= row + offset < N:
+                ax.plot([col + 0.5, col - offset + 0.5], [N - row - 0.5, N - (row + offset) - 0.5], color=queen_color, linestyle='-', lw=0.5)
     ax.set_xlim(0, N)
     ax.set_ylim(0, N)
     ax.set_aspect('equal')

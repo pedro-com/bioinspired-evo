@@ -18,6 +18,9 @@ class Mutation(ABC):
     mutation_eps: float
     gene_type: str
 
+    def p_mutation(self, indv: ndarray):
+        return self.average_mutation_rate / indv.shape[0]
+
     @abstractmethod
     def mutate(self, indv: ndarray) -> ndarray:
         pass

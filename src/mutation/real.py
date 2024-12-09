@@ -8,9 +8,6 @@ from typing import Tuple
 class RealNumberMutation(Mutation):
     value_range: Tuple[int]
 
-    def p_mutation(self, indv: np.ndarray):
-        return self.average_mutation_rate / indv.shape[0]
-
 class RandomRangeMutation(RealNumberMutation):
     def mutate(self, indv: np.ndarray) -> np.ndarray:
         mutation_mask = rng.random(size=indv.shape[0]) < self.p_mutation(indv)

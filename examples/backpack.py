@@ -7,7 +7,7 @@ def fit_01_knapsack(solution, items, W):
         if include:
             total_value += items[i][0]
             total_weight += items[i][1]
-    return -total_value if total_weight <= W else 0
+    return -total_value if total_weight <= W else -total_value / (1 + total_weight - W)
 
 def fit_bounded_knapsack(solution, items, W):
     total_value = 0
@@ -17,7 +17,7 @@ def fit_bounded_knapsack(solution, items, W):
             return 0
         total_value += items[i][0] * count
         total_weight += items[i][1] * count
-    return -total_value if total_weight <= W else 0
+    return -total_value if total_weight <= W else -total_value / (1 + total_weight - W)
 
 def fit_unbounded_knapsack(solution, items, W):
     total_value = 0
@@ -25,7 +25,7 @@ def fit_unbounded_knapsack(solution, items, W):
     for i, count in enumerate(solution):
         total_value += items[i][0] * count
         total_weight += items[i][1] * count
-    return -total_value if total_weight <= W else 0
+    return -total_value if total_weight <= W else -total_value / (1 + total_weight - W)
 
 def print_knapsack_solution(solution, items):
     total_value = 0
