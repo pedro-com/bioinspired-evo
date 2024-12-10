@@ -225,7 +225,8 @@ class ProgressiveEvolutive:
             seed_population.append(results["best_cromosome"])
             if obtain_metrics:
                 evolution_metrics.append(results["evolution_metrics"])
-            print(f"Evolutive {idx}:")
+            if trace != 0:
+                print(f"Evolutive {idx}:")
             results = evo.evolve(fit, gen_per_evolution, target, trace, obtain_metrics, seed_population)
         if obtain_metrics:
             evolution_metrics.append(results["evolution_metrics"])

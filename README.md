@@ -14,3 +14,17 @@ Evolución basada en métodos bioinspirados
     - To Opt: Random reverse.
 
 Reference Page: <http://www.tomaszgwiazda.com/blendX.htm>
+
+$$ch_1 = \beta p_1 + (1 - \beta) p_2$$
+$$ch_2 = (1 - \beta) p_1 + \beta p_2$$
+$$\beta \in [0, 1)^{dim(p)}$$
+
+$$ch_1 = \beta p_1 + (1 + \alpha - \beta) p_2$$
+$$ch_2 = (1 + \alpha - \beta) p_1 + \beta p_2$$
+$$\beta \in [0, 1)^{dim(p)}$$
+$$\alpha \in [0, 1]$$
+
+$$gene_{mutation} \in [gene - \epsilon, gene + \epsilon]$$
+$$\epsilon = muteps * len(alphabet)$$
+
+
