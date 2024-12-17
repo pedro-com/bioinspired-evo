@@ -1,11 +1,11 @@
-from .evolutive import Evolutive, ProgressiveEvolutive, plot_metric
+from .gen_evolutive import GeneticEvolutive, MultiGeneticEvolutive
 from .alphabet import AlphabetEvolutive, PermutationEvolutive
 from .real import RealEvolutive
 
 __all__ = [
     "plot_metric",
-    "Evolutive",
-    "ProgressiveEvolutive",
+    "GeneticEvolutive",
+    "MultiGeneticEvolutive",
     "PermutationEvolutive",
     "AlphabetEvolutive",
     "RealEvolutive"
