@@ -1,10 +1,11 @@
-from gen_evolutive import GeneticEvolutive
 from typing import Callable, Union, Dict, List, Any, Type, Tuple
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
+
+from ..gen_evolutive import GeneticEvolutive
 
 def evaluate_evolutive(
         evolutive: GeneticEvolutive,

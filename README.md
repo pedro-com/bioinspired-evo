@@ -28,3 +28,40 @@ $$gene_{mutation} \in [gene - \epsilon, gene + \epsilon]$$
 $$\epsilon = muteps * len(alphabet)$$
 
 
+## MultiObjective
+
+* Dominance Function:
+    * Obtains the number of points a specific point dominates
+    $$[(p_i, i)...], i \in \mathbb{N}$$
+
+* MultiObjectiveEvolutive:
+    * ...
+
+* MOGA:
+    * Calcular fitness para las funciones g_i.
+    $$F_i = N  - (|r_i| - 1)/2 - \sum_{k=1}^{r_i - 1}|k|$$
+    * Mismo proceso evolutivo
+
+* MOGA nichos
+
+* Strenght Pareto
+
+
+
+## Tareas
+
+* Función de calculo de dominancia:
+    - Dado una lista de puntos, obtener una matriz de dominancias (booleana), donde para cada valor aij = 1, si pi = pj o pi domina a pj.
+
+* Función para calcular los frentes:
+    - Usando la matriz de dominancia y los puntos, devolver un listado de listados de todos los frentes.
+
+* Función para calcular distancia de Crowding:
+    - Pasado una lista de valores (P_i, f_1(P_i), f_2(P_i)...)
+
+* Funciones a optimizar:
+    - Escribir y probar que funcionen las funciones a optimizar.
+
+* Función de reducción de Clustering para elitismo
+
+* Implementar evolución MOGA y NSAG2
