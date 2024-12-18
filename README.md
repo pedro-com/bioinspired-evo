@@ -50,18 +50,30 @@ $$\epsilon = muteps * len(alphabet)$$
 
 ## Tareas
 
-* Función de calculo de dominancia:
+* Función de calculo de dominancia: Fernando Y Alejandro0
     - Dado una lista de puntos, obtener una matriz de dominancias (booleana), donde para cada valor aij = 1, si pi = pj o pi domina a pj.
 
-* Función para calcular los frentes:
+* Función para calcular los frentes: Fernando Y Alejandro0
     - Usando la matriz de dominancia y los puntos, devolver un listado de listados de todos los frentes.
 
-* Función para calcular distancia de Crowding:
+* Función para calcular distancia de Crowding: Fernando Y Alejandro0
     - Pasado una lista de valores (P_i, f_1(P_i), f_2(P_i)...)
 
-* Funciones a optimizar:
+PUNTOS = [(f1(P1), f2(P1)), (f1(P2), f2(P2)), (f1(P3), f2(P3), (f1(P4), f2(P4)))]
+
+I = [0, 0, 0, 0]
+
+for k in range(PUNTOS.shape[1]):
+    args = np.argsort(PUNTOS[:, k])
+    I[args[0]] = I[args[-1]] = inf
+    for i in range(1, PUNTOS.shape[0] - 1):
+        I[args[i]] += (I[args[i + 1]] - I[args[i - 1]]) / (I[args[-1]] - I[args[0]])
+
+* Funciones a optimizar: Alejandro1
     - Escribir y probar que funcionen las funciones a optimizar.
 
-* Función de reducción de Clustering para elitismo
+* Función de reducción de Clustering para elitismo: Alejandro1
 
-* Implementar evolución MOGA y NSAG2
+* Implementar evolución MOGA y NSAG2: Pedro0 + Evaluación
+
+* Pedro1: Diapos + Notebook?
