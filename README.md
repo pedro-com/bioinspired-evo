@@ -81,22 +81,26 @@ for k in range(PUNTOS.shape[1]):
 
 ## Cosas que quedan
 
-* Realizar la presentación:
+* Realizar la presentación: (Alex, Pedro y Fernando)
     - Diapos con el algoritmo que se utiliza (explicación + fotillos).
     - Resultados, tablitas con comparaciones + imágenes de los resultados
 
-* Animación del algoritmo en funcionamiento.
+* Animación del algoritmo en funcionamiento. (Alex)
     - evolve se puede hacer a pasos (poniendo parte del número de generaciones y pasando la population anterior + best_cromosome para continuar con el previo).
+    - .evolve : generations = 20 | 200generaciones algoritmo -> 10 veces -> .evolve(n_generations=20, seed_population=res["best_cromosome"] + res["population"])
 
-* Función para plotear varios frentes de pareto de varias funciones:
+* Función para plotear varios frentes de pareto de varias funciones: (Alejandro)
     * Poner colores y formas para cada frente.
     * Poner leyenda con el nombre de los frentes.
     * Recibe {nombre_frente: Puntos del frente}
 
-* 3D plot del frente de pareto (parecido al de las rutas por ciudades pero con puntos).
+* 3D plot del frente de pareto (parecido al de las rutas por ciudades pero con puntos). (Alejandro)
 
-* Plot del mapa entre ciudades (Estaría guay que el tiempo estuviera representado como una escala de colores (por ejemplo azul a rojo y q los azules sean menos tiempo)).
+* Plot del mapa entre ciudades (Estaría guay que el tiempo estuviera representado como una escala de colores (por ejemplo azul a rojo y q los azules sean menos tiempo)). (Alex, Pedro y Fernando)
 
 * Notebook de resultados:
-    * Sección 1: Celdas primeras introduciendo los algoritmos que se han implementado con graficos (estaría hecho pero ponerlo bonito).
-    * Sección K: Una sección para cada problema que teníamos que resolver.
+    * Sección 1: Celdas primeras introduciendo los algoritmos que se han implementado con graficos (estaría hecho pero ponerlo bonito). (Alex, Pedro y Fernando)
+    * Sección K: Una sección para cada problema que teníamos que resolver. (Alejandro)
+        - Empezar con GridSearch -> Pedro | Evaluar 10 veces y sacar media de metricas.
+        - Foto comparando pareto con un buen resultado del nuestro
+        - Foto comparando pareto + nsga2 + nuestro en una gráfica

@@ -72,7 +72,7 @@ def crowding_distances(points: np.ndarray):
     def crowding_distance(p_front: np.ndarray):
         front = points[p_front]
         if front.shape[0] <= 3:
-            return np.ones(front.shape[0])
+            return np.ones(front.shape[0]) * front.shape[1]
         normalization = front.max(axis=0) - front.min(axis=0)
         normalization[normalization == 0] = 1
         norm_front = front / normalization
