@@ -77,3 +77,26 @@ for k in range(PUNTOS.shape[1]):
 * Implementar evolución MOGA y NSAG2: Pedro0 + Evaluación
 
 * Pedro1: Diapos + Notebook?
+
+
+## Cosas que quedan
+
+* Realizar la presentación:
+    - Diapos con el algoritmo que se utiliza (explicación + fotillos).
+    - Resultados, tablitas con comparaciones + imágenes de los resultados
+
+* Animación del algoritmo en funcionamiento.
+    - evolve se puede hacer a pasos (poniendo parte del número de generaciones y pasando la population anterior + best_cromosome para continuar con el previo).
+
+* Función para plotear varios frentes de pareto de varias funciones:
+    * Poner colores y formas para cada frente.
+    * Poner leyenda con el nombre de los frentes.
+    * Recibe {nombre_frente: Puntos del frente}
+
+* 3D plot del frente de pareto (parecido al de las rutas por ciudades pero con puntos).
+
+* Plot del mapa entre ciudades (Estaría guay que el tiempo estuviera representado como una escala de colores (por ejemplo azul a rojo y q los azules sean menos tiempo)).
+
+* Notebook de resultados:
+    * Sección 1: Celdas primeras introduciendo los algoritmos que se han implementado con graficos (estaría hecho pero ponerlo bonito).
+    * Sección K: Una sección para cada problema que teníamos que resolver.

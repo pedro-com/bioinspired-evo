@@ -1,15 +1,17 @@
-from typing import Callable, Union, Tuple, Any
+from typing import Callable, Union, Tuple, Any, Literal
 
 import numpy as np
 
-from .evolutive import GeneticEvolutive
+from .evolutive import MultiEvolutive
+from ..evaluation import MultiObjectiveEvaluation
 from ..mutation import REAL_MUTATION, Mutation, MultiMutation
 from ..crossover import REAL_CROSSOVER, Crossover, MultiCrossover
 
-class RealEvolutive(GeneticEvolutive):
+class RealMultiEvolutive(MultiEvolutive):
     def __init__(self,
                  n_individuals: int,
                  value_range: Tuple[float, float],
+                 maximize: Tuple[bool, ...],
                  gene_type: str="float64",
                  cromolength: int = None,
                  mutation: Union[str, Tuple[str], Mutation, MultiMutation] = "random-gene",
@@ -22,10 +24,14 @@ class RealEvolutive(GeneticEvolutive):
                  mutation_eps: float=0.1,
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
                  elitism: bool = False,
-                 maximize: bool = True,
                  normalize: bool = False,
-                 use_multithread: bool = False,
-                 T_selection: int = 2
+                 front: Literal['range', 'front'] = 'range',
+                 penalization: Literal['sharing', 'crowding', 'crowding_norm'] = 'sharing',
+                 niche_sharing_size: float = 0.8,
+                 selection_pool_size: float = 0.8,
+                 steps_to_reduce_p_elite: int = 100,
+                 T_selection: int = 2,
+                 evaluation_metrics: MultiObjectiveEvaluation = None
                  ):
         self.value_range = value_range if value_range[0] < value_range[1] else (value_range[1], value_range[0])
         self.cromolength = cromolength
@@ -64,8 +70,13 @@ class RealEvolutive(GeneticEvolutive):
             phenotype=phenotype,
             elitism=elitism,
             maximize=maximize,
-            use_multithread=use_multithread,
+            front=front,
+            penalization=penalization,
+            niche_sharing_size=niche_sharing_size,
+            selection_pool_size=selection_pool_size,
+            steps_to_reduce_p_elite=steps_to_reduce_p_elite,
             T_selection=T_selection,
+            evaluation_metrics=evaluation_metrics
         )
     
     def apply_phenotype(self, cromosome: np.ndarray):

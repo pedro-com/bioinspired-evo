@@ -1,17 +1,19 @@
-from typing import Callable, Union, Tuple, Any
+from typing import Callable, Union, Tuple, Any, Literal
 
 import numpy as np
 
 from ..utils import alphabet_gene_type
-from .evolutive import GeneticEvolutive
+from .evolutive import MultiEvolutive
+from ..evaluation import MultiObjectiveEvaluation
 from ..mutation import ALPHABET_MUTATION, Mutation, MultiMutation
 from ..crossover import ALPHABET_CROSSOVER, Crossover, MultiCrossover
 
 
-class AlphabetEvolutive(GeneticEvolutive):
+class AlphabetMultiEvolutive(MultiEvolutive):
     def __init__(self,
                  alphabet: Tuple,
                  n_individuals: int,
+                 maximize: Tuple[bool, ...],
                  mutation: Union[str, Tuple[str], Mutation, MultiMutation] = "random-gene",
                  crossover: Union[str, Tuple[str], Crossover, MultiCrossover] = "split-merge",
                  multi_mutation: str="random",
@@ -22,9 +24,13 @@ class AlphabetEvolutive(GeneticEvolutive):
                  mutation_eps: float=0.1,
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
                  elitism: bool = False,
-                 maximize: bool = True,
-                 use_multithread: bool = False,
-                 T_selection: int = 2
+                 front: Literal['range', 'front'] = 'range',
+                 penalization: Literal['sharing', 'crowding', 'crowding_norm'] = 'sharing',
+                 niche_sharing_size: float = 0.8,
+                 selection_pool_size: float = 0.8,
+                 steps_to_reduce_p_elite: int = 100,
+                 T_selection: int = 2,
+                 evaluation_metrics: MultiObjectiveEvaluation = None
                  ):
         self.alphabet = np.array(alphabet)
         len_alpha = self.alphabet.shape[0]
@@ -62,8 +68,13 @@ class AlphabetEvolutive(GeneticEvolutive):
             phenotype=phenotype,
             elitism=elitism,
             maximize=maximize,
-            use_multithread=use_multithread,
+            front=front,
+            penalization=penalization,
+            niche_sharing_size=niche_sharing_size,
+            selection_pool_size=selection_pool_size,
+            steps_to_reduce_p_elite=steps_to_reduce_p_elite,
             T_selection=T_selection,
+            evaluation_metrics=evaluation_metrics
         )
     
     def apply_phenotype(self, cromosome: np.ndarray):
@@ -72,7 +83,7 @@ class AlphabetEvolutive(GeneticEvolutive):
     def creation(self):
         return [np.random.randint(self.alphabet.shape[0], size=self.cromolength, dtype=self.gene_type) for _ in range(self.n_individuals)]
 
-class PermutationEvolutive(AlphabetEvolutive):
+class PermutationMultiEvolutive(AlphabetMultiEvolutive):
     def creation(self):
         def random_shuffle():
             permutation = np.arange(self.alphabet.shape[0], dtype=self.gene_type)

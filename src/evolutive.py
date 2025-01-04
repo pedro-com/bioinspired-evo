@@ -4,29 +4,18 @@ import matplotlib.pyplot as plt
 from typing import Tuple, Callable, Any, Union, List, Dict, Type
 from random import sample
 import numpy as np
+from functools import reduce
 
+from .utils import plot_evolution_metric
 from .crossover import Crossover, MULTI_CROSSOVER, MultiCrossover
 from .mutation import Mutation, MULTIMUTATION_DICT, MultiMutation
-
-def plot_metric(ax:plt.Axes, metric_name:str, metric:Dict):
-    styles = {"min": "r", "mean": "b", "max": "g", "best": "darkviolet"}
-    fontdict={"fontweight": "bold", "fontfamily": "DejaVu Sans"}
-    n_generations = 0
-    for k_name, color in styles.items():
-        n_generations = max(len(metric[k_name]), n_generations)
-        ax.plot(metric[k_name], color=color, label=k_name.capitalize())
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, frameon=True)
-    ax.set_title(f"{metric_name.capitalize()} across Generations", fontsize=14, pad=20, fontdict=fontdict)
-    ax.set_xlabel("Generations", fontsize=12, fontdict=fontdict)
-    ax.set_ylabel(metric_name.capitalize(), fontsize=12, fontdict=fontdict)
-    ax.set_xlim(0, n_generations - 1)
-    ax.grid(True)
 
 @dataclass
 class Evolutive(ABC):
     n_individuals: int
     mutation: Union[Mutation, MultiMutation]
     crossover: Union[Crossover, MultiCrossover]
+    phenotype: Callable
     gene_type: str
     T_selection: int
 
@@ -53,36 +42,125 @@ class Evolutive(ABC):
         crossovers = (crossover_dict[cross_name](**crossover_kwargs) for cross_name in crossover_name)
         return MULTI_CROSSOVER[multi_crossover](tuple(crossovers))
 
-    def select(self, fit_population: List):
-        T_sample = sample(fit_population, k=self.T_selection)
-        best_individual = T_sample[0]
-        for individual in T_sample[1:]:
-            best_individual = self.best_individual(best_individual, individual)
-        return best_individual[0]
+    def calculate_diversity(self, population: List[np.ndarray]):   
+        population = np.array(population)
+        centroid = np.mean(population, axis=0)
+        return np.sqrt(np.sum((population - centroid)**2, axis=0)), centroid
 
+    def plot_evolution_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None,figsize=(12, 5)):
+        assert axs is None or len(axs) != len(evolution_metrics), "Invalid number of axes"
+        if axs is None:
+            fig, axs = plt.subplots(len(evolution_metrics), 1, figsize=figsize)
+            plt.subplots_adjust(hspace=1.)
+        for idx, (metric_name, metric) in enumerate(evolution_metrics.items()):
+            plot_evolution_metric(axs[idx], metric_name, metric)
+
+    def generate_population(self, seed_population: List[np.ndarray]=None):
+        if seed_population is None:
+            return self.creation()
+        if len(seed_population) < self.n_individuals:
+            return seed_population + self.creation()[:self.n_individuals - len(seed_population)]
+        return seed_population
+    
+    @abstractmethod
     def selection(self, fit_population: List):
         """
         Selects T random individuals from the population and obtains the one with the best values.
         """
-        select = lambda : self.select(fit_population)
-        return ((select(), select()) for _ in range(self.n_individuals // 2))
-    
+        pass
+
     @abstractmethod
-    def evolve(self, fit: Union[Callable, Tuple[Callable]], n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False, seed_population: List[np.ndarray]=None):
+    def creation(self):
+        """Creates an random population from the gene variation"""
+        pass
+
+    @abstractmethod
+    def apply_phenotype(self, cromosome: Any):
+        """Applies the phenotype to the passed cromosome"""
+        pass
+
+    @abstractmethod
+    def evolve(self, fit: Callable, n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False, seed_population: List[np.ndarray]=None):
         pass
 
     @abstractmethod
     def calculate_metrics(self, *args):
         pass
 
-    @abstractmethod
-    def calculate_diversity(self, *args):
-        pass
+@dataclass
+class MultiGeneticEvolutive:
+    evolutions: Union[Evolutive, Tuple[Evolutive, ...]]
+    pop_to_reintroduce: float = 0.2
+    n_generations_per_evo: Union[int, Tuple[int]] = -1
 
-    def plot_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None,figsize=(12, 5)):
-        assert axs is None or len(axs) != len(evolution_metrics), "Invalid number of axes"
-        if axs is None:
-            fig, axs = plt.subplots(len(evolution_metrics), 1, figsize=figsize)
-            plt.subplots_adjust(hspace=1.)
-        for idx, (metric_name, metric) in enumerate(evolution_metrics.items()):
-            plot_metric(axs[idx], metric_name, metric)
+    def __post_init__(self):
+        if isinstance(self.evolutions, Evolutive):
+            self.evolutions = (self.evolutions,)
+        assert self.n_generations_per_evo > 0, "Invalid number of generations, must be greater than 1"
+
+    def n_generations_per_evolution(self, n_generations: int):
+        if isinstance(self.n_generations_per_evo, int):
+            n_gens = (n_generations // len(self.evolutions) if self.n_generations_per_evo <= 0 else
+                      min(self.n_generations_per_evo, n_generations))
+            n_generations_evo = [self.n_generations_per_evo for _ in range(0, n_generations, n_gens)]
+            total_actual_gens = sum(n_generations_evo)
+            if total_actual_gens < n_generations:
+                n_generations_evo.append(n_generations - total_actual_gens)
+            return n_generations_evo
+        n_generations_evo = [self.n_generations_per_evo for _ in range(0, n_generations, sum(self.n_generations_per_evo))]
+        n_generations_evo = reduce(lambda a, b: a + b, n_generations_evo, [])
+        total_actual_gens = sum(n_generations_evo)
+        n_evolutions = len(self.n_generations_per_evo)
+        idx = 0
+        while total_actual_gens < n_generations:
+            n_evo = self.n_generations_per_evo[idx % n_evolutions]
+            if total_actual_gens + n_evo > n_generations:
+                n_evo = n_generations - total_actual_gens
+            n_generations_evo.append(n_evo)
+            total_actual_gens += n_evo
+        return n_generations_evo
+        
+    def evolution_it(self, n_generations: int):
+        def evolutions():
+            n_evolutions = len(self.n_generations_per_evo)
+            for idx, n_generation in enumerate(self.n_generations_per_evolution(n_generations)):
+                yield self.evolutions[idx % n_evolutions], n_generation
+        return evolutions()
+
+    def evolve(self, fit: Union[Callable, List[Callable]], n_generations:int, target:float=None, trace:int=0, obtain_metrics: bool=False):
+        total_gens = 0
+        last_update = 0
+        results = None
+        evolution_metrics = []
+        for idx, (evolution, n_generations_evo) in enumerate(self.evolution_it(n_generations)):
+            if trace != 0:
+                print(f"Evolutive {idx}:")
+            if results is None:
+                results = evolution.evolve(fit, n_generations_evo, target, trace, obtain_metrics)
+                last_update = results["last_update"]
+                total_gens += n_generations_evo
+                if obtain_metrics:
+                    evolution_metrics.append(results["evolution_metrics"])
+                continue
+            seed_population = results["best_cromosome"]
+            n_reintroduce = int(self.pop_to_reintroduce*evolution.n_population - len(seed_population))
+            if n_reintroduce <= 0:
+                seed_population.extend(sample(results["population"], n_reintroduce))
+            results = evolution(fit, n_generations_evo, target, trace, obtain_metrics, seed_population)
+            if results["last_update"] != 0:
+                last_update = total_gens + results["last_update"]
+            total_gens += n_generations_evo
+            if obtain_metrics:
+                evolution_metrics.append(results["evolution_metrics"])
+        results["last_update"] = last_update
+        if obtain_metrics:
+            results["evolution_metrics"] = evolution_metrics
+        return results
+    
+    def plot_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None, figsize=(12, 5)):
+        fig, axs = plt.subplots(len(self.evolutions), 2, figsize=figsize)
+        plt.subplots_adjust(hspace=1.25)
+        for idx, ax_line in enumerate(axs):
+            metric = evolution_metrics[idx]
+            for idx, (metric_name, metric) in enumerate(metric.items()):
+                plot_evolution_metric(ax_line[idx], metric_name, metric)
