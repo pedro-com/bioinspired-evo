@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List, Callable, Tuple, Literal
+from typing import List, Callable, Tuple, Literal, Union
 import numpy as np
-from random import sample
+from random import sample, choice
 
 from ..utils import (
     domination_matrix,
@@ -9,7 +9,9 @@ from ..utils import (
     sharing_distances,
     crowding_distances,
     normalized_crowding_distances,
-    merge_sorted_lists
+    roulette_selection,
+    section_selection,
+    probability_selection
 )
 from ..evaluation import MultiObjectiveEvaluation
 from ..evolutive import Evolutive
@@ -17,14 +19,18 @@ from ..evolutive import Evolutive
 '''WARNING
 This class is meant to maximize both functions, if you want to minimize a function pass -f(x) as the valid function
 '''
+SelectionPool = Literal['best', 'roulette', 'section', 'random']
+Front = Literal['range', 'front']
+Penalization = Literal['sharing', 'crowding', 'crowding_norm']
 @dataclass
 class MultiEvolutive(Evolutive):
     maximize: Tuple[bool]
-    elitism: bool = False
-    front: Literal['range', 'front'] = 'range'
-    penalization: Literal['sharing', 'crowding', 'crowding_norm'] = 'sharing'
-    niche_sharing_size: float = 0.8
+    selection_pool: Union[SelectionPool, List[SelectionPool], List[Tuple[SelectionPool, float]]] = 'best'
     selection_pool_size: float = 0.8
+    front: Union[Front, List[Front], List[Tuple[Front, float]]] = 'range'
+    penalization: Union[Penalization, List[Penalization], List[Tuple[Penalization, float]]] = 'sharing'
+    niche_sharing_size: float = 0.8
+    elitism: bool = False
     steps_to_reduce_p_elite: int = 100
     evaluation_metrics: MultiObjectiveEvaluation = None
 
@@ -38,17 +44,30 @@ class MultiEvolutive(Evolutive):
         return [p_elite[k] for k in np.flatnonzero(p_range == 1)]
 
     def _front(self, fit_scores: np.ndarray):
+        front = probability_selection(self.front)
         domination_mx = domination_matrix(fit_scores)
-        if self.front == 'front':
+        if front == 'front':
             return domination_mx, point_fronts(domination_mx)
         return domination_mx, domination_mx.sum(axis=0)
 
     def _penalization(self, fit_scores: np.ndarray, p_front: np.ndarray):
-        if self.penalization == 'crowding':
+        penalization = probability_selection(self.penalization)
+        if penalization == 'crowding':
             return crowding_distances(fit_scores)
-        elif self.penalization == 'crowding_norm':
+        elif penalization == 'crowding_norm':
             return normalized_crowding_distances(fit_scores)
         return sharing_distances(fit_scores, p_front == 1, self.niche_sharing_size)
+
+    def _selection_pool(self, p_selection: List, n_ind: int):
+        selection_pool = probability_selection(self.selection_pool)
+        if selection_pool == 'best':
+            p_selection.sort(key=lambda v: v[2])
+            return p_selection[-n_ind:]
+        elif selection_pool == 'roulette':
+            return roulette_selection(p_selection, n_ind, weight_keys=lambda v: v[2])
+        elif selection_pool == 'section':
+            return section_selection(p_selection, n_ind, point_keys=lambda v: v[1])
+        return sample(p_selection, n_ind)
 
     def calculate_fit(self, fit: Tuple[Callable], population: List[np.ndarray], p_elite: List):
         # Obtain fit
@@ -70,17 +89,18 @@ class MultiEvolutive(Evolutive):
             fit_front = (total_points - (n_points - 1) / 2 - acc_points) / (total_points / 2)
             penalization = penalization_func(p_front)
             strength_fr = strength_ranges[p_front] / (total_points + 1)
-            yield [(population[p_idx], fit_scores[p_idx], (fit_front + p_str)*p_pen)
-                   for (p_idx, p_pen, p_str) in zip(np.flatnonzero(p_front), penalization, strength_fr)]
+            multi_fit = (fit_front + strength_fr) * penalization
+            yield [(population[p_idx], fit_scores[p_idx], m_fit)
+                   for (p_idx, m_fit) in zip(np.flatnonzero(p_front), multi_fit) if m_fit > 0.]
+            # The last check is specific for functions that have near points with the same fit score
             acc_points += n_points
     
     def fit_population(self, fit: Callable, population: List[np.ndarray], p_elite: List):
         fit_pop = self.calculate_fit(fit, population, p_elite)
         p_selection = next(fit_pop, [])
         p_elite = p_selection[:]
-        p_elite.sort(key=lambda v: tuple(v[1]))
         if len(p_selection) > self.n_selection_individuals:
-            return p_elite, sorted(p_selection, key=lambda v: v[2])[-self.n_selection_individuals:]
+            return p_elite, self._selection_pool(p_selection, self.n_selection_individuals)
         while len(p_selection) < self.n_selection_individuals:
             p_add = next(fit_pop, [])
             if not p_add:
@@ -88,8 +108,7 @@ class MultiEvolutive(Evolutive):
             if len(p_add) + len(p_selection) < self.n_selection_individuals:
                 p_selection.extend(p_add)
                 continue
-            p_add.sort(key=lambda v: v[2])
-            p_selection.extend(p_add[-self.n_selection_individuals + len(p_selection):])
+            p_selection.extend(self._selection_pool(p_add, self.n_selection_individuals - len(p_selection)))
         return p_elite, p_selection
     
     def select(self, fit_population: List):
@@ -126,7 +145,7 @@ class MultiEvolutive(Evolutive):
                     for m_name, value in values.items():
                         evolution_metrics[metric][m_name][generation - 1] = value
             if not self.elitism:
-                p_elite = merge_sorted_lists(p_elite, p_elite_new, key=lambda v: tuple(v[1]))
+                p_elite.extend(p_elite_new)
                 # Add to elite population if elitism is not selected
                 if generation % self.steps_to_reduce_p_elite == 0 and generation != 0:
                     p_elite = self.reduce_elite(p_elite)

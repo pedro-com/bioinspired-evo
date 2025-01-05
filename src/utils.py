@@ -1,10 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Dict, List, Callable, Any, Tuple
-from pymoo.vendor.vendor_coco import COCOProblem
-from pymoo.indicators.gd_plus import GDPlus
-from pymoo.indicators.igd_plus import IGDPlus
-from pymoo.indicators.hv import HV
+from typing import Dict, List, Callable, Any, Tuple, Union
+from random import choice, choices
 
 def alphabet_gene_type(alphabet_size:int):
     size = 8
@@ -100,6 +97,36 @@ def merge_sorted_lists(l1: List[Any], l2: List[Any], key: Callable[[Any], Any]=l
     l1.extend(l2[j:])
     return l1
 
+def roulette_selection(population: List, k: int, weight_keys: Callable[[Any], Any]=lambda v: v):
+    if k >= len(population):
+        return population
+    population_left = len(population)
+    cumulative_weights = np.cumsum(np.array([weight_keys(p) for p in population]))
+    selected = []
+    for _ in range(k):
+        spin = np.random.uniform(0, cumulative_weights[population_left - 1])
+        idx = np.searchsorted(cumulative_weights, spin, side='left')
+        selected.append(population[idx])
+        if idx != population_left - 1:
+            cumulative_weights[idx:population_left - 1] = cumulative_weights[idx + 1:population_left] - cumulative_weights[idx]
+        population_left -= 1
+    return selected
+
+def section_selection(population: List, k: int, point_keys: Callable[[Any], Any]=lambda v: v):
+    if k >= len(population):
+        return population
+    points = np.array([point_keys(p) for p in population])
+    idx_sort = np.random.randint(0, points.shape[1])
+    sort_indexes = np.argsort(points[:, idx_sort])
+    k_pos = np.random.randint(0, points.shape[1] - k)
+    return [population[idx] for idx in sort_indexes[k_pos: k_pos + k]]
+
+def probability_selection(values: Union[Any, List[Any], List[Tuple[Any, float]]]):
+    if not isinstance(values, (list, tuple)) or not values:
+        return values
+    if not isinstance(values[0], (list, tuple)):
+        return choice(values)
+    return choices([v[0] for v in values], weights=[v[1] for v in values], k=1)
 
 # def crowding_distances(fit_scores: np.ndarray):
 #     a = 0

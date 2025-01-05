@@ -1,8 +1,8 @@
-from typing import Callable, Union, Tuple, Any, Literal
+from typing import Callable, Union, Tuple, Any, Literal, List
 
 import numpy as np
 
-from .evolutive import MultiEvolutive
+from .evolutive import MultiEvolutive, SelectionPool, Front, Penalization
 from ..evaluation import MultiObjectiveEvaluation
 from ..mutation import REAL_MUTATION, Mutation, MultiMutation
 from ..crossover import REAL_CROSSOVER, Crossover, MultiCrossover
@@ -25,9 +25,10 @@ class RealMultiEvolutive(MultiEvolutive):
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
                  elitism: bool = False,
                  normalize: bool = False,
-                 front: Literal['range', 'front'] = 'range',
-                 penalization: Literal['sharing', 'crowding', 'crowding_norm'] = 'sharing',
+                 front: Union[Front, List[Front], List[Tuple[Front, float]]] = 'range',
+                 penalization: Union[Penalization, List[Penalization], List[Tuple[Penalization, float]]] = 'sharing',
                  niche_sharing_size: float = 0.8,
+                 selection_pool: Union[SelectionPool, List[SelectionPool], List[Tuple[SelectionPool, float]]] = 'best',
                  selection_pool_size: float = 0.8,
                  steps_to_reduce_p_elite: int = 100,
                  T_selection: int = 2,
@@ -73,6 +74,7 @@ class RealMultiEvolutive(MultiEvolutive):
             front=front,
             penalization=penalization,
             niche_sharing_size=niche_sharing_size,
+            selection_pool=selection_pool,
             selection_pool_size=selection_pool_size,
             steps_to_reduce_p_elite=steps_to_reduce_p_elite,
             T_selection=T_selection,

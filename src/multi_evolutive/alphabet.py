@@ -1,9 +1,9 @@
-from typing import Callable, Union, Tuple, Any, Literal
+from typing import Callable, Union, Tuple, Any, Literal, List
 
 import numpy as np
 
 from ..utils import alphabet_gene_type
-from .evolutive import MultiEvolutive
+from .evolutive import MultiEvolutive, SelectionPool, Front, Penalization
 from ..evaluation import MultiObjectiveEvaluation
 from ..mutation import ALPHABET_MUTATION, Mutation, MultiMutation
 from ..crossover import ALPHABET_CROSSOVER, Crossover, MultiCrossover
@@ -24,9 +24,10 @@ class AlphabetMultiEvolutive(MultiEvolutive):
                  mutation_eps: float=0.1,
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
                  elitism: bool = False,
-                 front: Literal['range', 'front'] = 'range',
-                 penalization: Literal['sharing', 'crowding', 'crowding_norm'] = 'sharing',
+                 front: Union[Front, List[Front], List[Tuple[Front, float]]] = 'range',
+                 penalization: Union[Penalization, List[Penalization], List[Tuple[Penalization, float]]] = 'sharing',
                  niche_sharing_size: float = 0.8,
+                 selection_pool: Union[SelectionPool, List[SelectionPool], List[Tuple[SelectionPool, float]]] = 'best',
                  selection_pool_size: float = 0.8,
                  steps_to_reduce_p_elite: int = 100,
                  T_selection: int = 2,
@@ -72,6 +73,7 @@ class AlphabetMultiEvolutive(MultiEvolutive):
             penalization=penalization,
             niche_sharing_size=niche_sharing_size,
             selection_pool_size=selection_pool_size,
+            selection_pool=selection_pool,
             steps_to_reduce_p_elite=steps_to_reduce_p_elite,
             T_selection=T_selection,
             evaluation_metrics=evaluation_metrics
