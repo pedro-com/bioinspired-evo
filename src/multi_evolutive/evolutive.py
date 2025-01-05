@@ -9,6 +9,7 @@ from ..utils import (
     sharing_distances,
     crowding_distances,
     normalized_crowding_distances,
+    merge_sorted_lists,
     roulette_selection,
     section_selection,
     probability_selection
@@ -61,8 +62,7 @@ class MultiEvolutive(Evolutive):
     def _selection_pool(self, p_selection: List, n_ind: int):
         selection_pool = probability_selection(self.selection_pool)
         if selection_pool == 'best':
-            p_selection.sort(key=lambda v: v[2])
-            return p_selection[-n_ind:]
+            return sorted(p_selection, key=lambda v: v[2])[-n_ind:]
         elif selection_pool == 'roulette':
             return roulette_selection(p_selection, n_ind, weight_keys=lambda v: v[2])
         elif selection_pool == 'section':
@@ -99,6 +99,7 @@ class MultiEvolutive(Evolutive):
         fit_pop = self.calculate_fit(fit, population, p_elite)
         p_selection = next(fit_pop, [])
         p_elite = p_selection[:]
+        p_elite.sort(key=lambda v: tuple(v[1]))
         if len(p_selection) > self.n_selection_individuals:
             return p_elite, self._selection_pool(p_selection, self.n_selection_individuals)
         while len(p_selection) < self.n_selection_individuals:
@@ -145,7 +146,7 @@ class MultiEvolutive(Evolutive):
                     for m_name, value in values.items():
                         evolution_metrics[metric][m_name][generation - 1] = value
             if not self.elitism:
-                p_elite.extend(p_elite_new)
+                p_elite = merge_sorted_lists(p_elite, p_elite_new, key=lambda v: tuple(v[1]))
                 # Add to elite population if elitism is not selected
                 if generation % self.steps_to_reduce_p_elite == 0 and generation != 0:
                     p_elite = self.reduce_elite(p_elite)

@@ -118,7 +118,7 @@ def section_selection(population: List, k: int, point_keys: Callable[[Any], Any]
     points = np.array([point_keys(p) for p in population])
     idx_sort = np.random.randint(0, points.shape[1])
     sort_indexes = np.argsort(points[:, idx_sort])
-    k_pos = np.random.randint(0, points.shape[1] - k)
+    k_pos = np.random.randint(0, points.shape[0] - k)
     return [population[idx] for idx in sort_indexes[k_pos: k_pos + k]]
 
 def probability_selection(values: Union[Any, List[Any], List[Tuple[Any, float]]]):
@@ -128,8 +128,14 @@ def probability_selection(values: Union[Any, List[Any], List[Tuple[Any, float]]]
         return choice(values)
     return choices([v[0] for v in values], weights=[v[1] for v in values], k=1)
 
-# def crowding_distances(fit_scores: np.ndarray):
-#     a = 0
+def cluster_points(points: np.ndarray, k_clusters: int, distance_mx: np.ndarray=None):
+    if points.shape[1] <= k_clusters:
+        return points
+    if distance_mx == None:
+        distance_mx = distance_matrix(points)
+    sort_dist = np.argsort(distance_mx.sum(axis=0))
+    return points[sort_dist[-k_clusters:]]
+
 '''
 def share_matrix(normalized_fit: np.ndarray, niche_size: float):
     sh_matrix = distance_matrix(normalized_fit)

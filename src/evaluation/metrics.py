@@ -6,7 +6,7 @@ from pymoo.indicators.gd_plus import GDPlus
 from pymoo.indicators.igd_plus import IGDPlus
 from pymoo.indicators.hv import HV
 
-from ..utils import distance_matrix
+from ..utils import distance_matrix, cluster_points
 import numpy as np
 
 class Metric(ABC):
@@ -52,7 +52,7 @@ class EvaluationMetric(Metric):
         evaluation_metrics["eval_results"] = eval_results
         return evaluation_metrics
 
-def gd_plus_metric(pareto_front: np.ndarray):
+def gd_plus_metric(pareto_front: np.ndarray, maximize: Tuple[bool]):
     max_lim = pareto_front.max(axis=0)
     min_lim = pareto_front.min(axis=0)
     gd_plus_eval = GDPlus(pareto_front)
@@ -132,7 +132,7 @@ def hrs(points: np.ndarray=None, distance_mx:np.ndarray=None, is_sorted: bool=Tr
         distance_mx = distance_matrix(points)
     if distance_mx.shape[0] == 0:
         return 0
-    d_max = distance_mx.diagonal(offset=1).max()
+    d_max = distance_mx.diagonal(offset=-1).max()
     R = np.sqrt(np.sum(np.ptp(points, axis=0)**2))
     return d_max / R if R > 0 else 0
 
@@ -189,19 +189,24 @@ class MultiObjectiveEvaluation(Metric):
     def __call__(self, results: List):
         if len(results) == 0:
             return {}
-        eval_results = [sorted([(res, tuple(self.evaluate(val))) for val in res], key=lambda v: v[1])
-                        for res in results]
+        eval_results = [sorted([tuple(self.evaluate(val)) for val in res]) for res in results]
+        k_cluster_points = min(*eval_results, key=lambda v: len(v))
+        mean_point_front = np.zeros((k_cluster_points, len(eval_results[0][0])))
         evaluation_results = []
         mean_scores = {k: 0. for k in self.metric_funcs}
-        for e_results in eval_results:
-            res_evaluation = self.evaluation(np.array([p[1] for p in e_results]))
+        for idx, e_results in enumerate(eval_results):
+            points = np.array([p[1] for p in e_results])
+            res_evaluation = self.evaluation(points)
             for k in mean_scores:
                 mean_scores[k] += res_evaluation[k]
-            res_evaluation["points"] = e_results
+            mean_point_front += cluster_points(points, k_cluster_points)
+            res_evaluation["results"] = results[idx]
+            res_evaluation["scores"] = e_results
             evaluation_results.append(res_evaluation)
         for k in mean_scores:
             mean_scores[k] /= len(eval_results)
         mean_scores["evaluation_results"] = evaluation_results
+        mean_scores["mean_front"] = mean_point_front / len(eval_results)
         return mean_scores
 
 '''
