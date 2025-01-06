@@ -52,7 +52,7 @@ class EvaluationMetric(Metric):
         evaluation_metrics["eval_results"] = eval_results
         return evaluation_metrics
 
-def gd_plus_metric(pareto_front: np.ndarray, maximize: Tuple[bool]):
+def gd_plus_metric(pareto_front: np.ndarray):
     max_lim = pareto_front.max(axis=0)
     min_lim = pareto_front.min(axis=0)
     gd_plus_eval = GDPlus(pareto_front)
