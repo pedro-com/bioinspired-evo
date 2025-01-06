@@ -89,12 +89,12 @@ for k in range(PUNTOS.shape[1]):
     - evolve se puede hacer a pasos (poniendo parte del número de generaciones y pasando la population anterior + best_cromosome para continuar con el previo).
     - .evolve : generations = 20 | 200generaciones algoritmo -> 10 veces -> .evolve(n_generations=20, seed_population=res["best_cromosome"] + res["population"])
 
-* Función para plotear varios frentes de pareto de varias funciones: (Alejandro)
+* Función para plotear varios frentes de pareto de varias funciones: (Alejandro) OK
     * Poner colores y formas para cada frente.
     * Poner leyenda con el nombre de los frentes.
     * Recibe {nombre_frente: Puntos del frente}
 
-* 3D plot del frente de pareto (parecido al de las rutas por ciudades pero con puntos). (Alejandro)
+* 3D plot del frente de pareto (parecido al de las rutas por ciudades pero con puntos). (Alejandro) OK
 
 * Plot del mapa entre ciudades (Estaría guay que el tiempo estuviera representado como una escala de colores (por ejemplo azul a rojo y q los azules sean menos tiempo)). (Alex, Pedro y Fernando)
 
