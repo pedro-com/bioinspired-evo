@@ -83,6 +83,8 @@ def hv_metric(reference_point: np.ndarray, maximize: Tuple[bool]):
         return hv_eval(points)
     return hv
 
+def save_min(line: np.ndarray):
+    return line.min() if line.size > 0 else 0.
 def zitler_dispersion(points: np.ndarray=None, distance_mx:np.ndarray=None):
     '''
     Uniformity of a set of solutions (e.g., Pareto fronts). It ensures that the solutions are evenly spread out
@@ -94,7 +96,7 @@ def zitler_dispersion(points: np.ndarray=None, distance_mx:np.ndarray=None):
         distance_mx = distance_matrix(points)
     if distance_mx.shape[0] == 0:
         return 0
-    min_distances = np.array([lin[lin > 0].min() for lin in distance_mx])
+    min_distances = np.array([save_min(lin[lin > 0]) for lin in distance_mx])
     sum_min = min_distances.sum()
     if sum_min == 0:
         return 0
@@ -112,7 +114,7 @@ def spa(points: np.ndarray=None, distance_mx:np.ndarray=None):
         distance_mx = distance_matrix(points)
     if distance_mx.shape[0] == 0:
         return 0
-    min_distances = np.array([lin[lin > 0].min() for lin in distance_mx])
+    min_distances = np.array([save_min(lin[lin > 0]) for lin in distance_mx])
     sum_min = min_distances.sum()
     if sum_min == 0:
         return 0
@@ -190,12 +192,14 @@ class MultiObjectiveEvaluation(Metric):
         if len(results) == 0:
             return {}
         eval_results = [sorted([tuple(self.evaluate(val)) for val in res]) for res in results]
-        k_cluster_points = min(*eval_results, key=lambda v: len(v))
+        res_lens = [len(res) for res in eval_results]
+        k_cluster_points = min(res_lens)
+        mean_points = sum(res_lens) / len(eval_results)
         mean_point_front = np.zeros((k_cluster_points, len(eval_results[0][0])))
         evaluation_results = []
         mean_scores = {k: 0. for k in self.metric_funcs}
         for idx, e_results in enumerate(eval_results):
-            points = np.array([p[1] for p in e_results])
+            points = np.array(e_results)
             res_evaluation = self.evaluation(points)
             for k in mean_scores:
                 mean_scores[k] += res_evaluation[k]
@@ -207,6 +211,7 @@ class MultiObjectiveEvaluation(Metric):
             mean_scores[k] /= len(eval_results)
         mean_scores["evaluation_results"] = evaluation_results
         mean_scores["mean_front"] = mean_point_front / len(eval_results)
+        mean_scores["mean_points"] = mean_points
         return mean_scores
 
 '''

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict, List, Callable, Any, Tuple, Union
 from random import choice, choices
+from itertools import combinations
 
 def alphabet_gene_type(alphabet_size:int):
     size = 8
@@ -129,12 +130,28 @@ def probability_selection(values: Union[Any, List[Any], List[Tuple[Any, float]]]
     return choices([v[0] for v in values], weights=[v[1] for v in values], k=1)
 
 def cluster_points(points: np.ndarray, k_clusters: int, distance_mx: np.ndarray=None):
-    if points.shape[1] <= k_clusters:
+    if points.shape[0] <= k_clusters:
         return points
     if distance_mx == None:
         distance_mx = distance_matrix(points)
     sort_dist = np.argsort(distance_mx.sum(axis=0))
     return points[sort_dist[-k_clusters:]]
+
+def list_combinations(values: List, exclude_from: tuple=()):
+    combs = []
+    for k in range(1, len(values) + 1):
+        if k in exclude_from:
+            continue
+        if k == 1:
+            combs.extend(values[:])
+        elif k == len(values):
+            combs.append(values)
+        else:
+            combs.extend(combinations(values, k))
+    if not combs:
+        return values
+    return combs
+    
 
 '''
 def share_matrix(normalized_fit: np.ndarray, niche_size: float):
