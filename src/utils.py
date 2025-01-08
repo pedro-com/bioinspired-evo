@@ -29,10 +29,33 @@ def plot_evolution_metric(ax:plt.Axes, metric_name:str, metric:Dict):
     ax.set_xlim(0, n_generations - 1)
     ax.grid(True)
 
-def domination_matrix(points: np.ndarray):
-    d_matrix = np.zeros((points.shape[0], points.shape[0]), dtype='bool')
+def apply_restriction(points: np.ndarray, restriction: Tuple[str, float]):
+    operation, value = restriction
+    if operation == 'greq':
+        return points >= value
+    if operation == 'gr':
+        return points > value
+    if operation == 'lteq':
+        return points <= value
+    if operation == 'lt':
+        return points < value
+    raise NameError(f"The operation {operation} is not recognised ['greq', 'gr', 'lteq', 'lt]")
+
+def domination_matrix(points: np.ndarray, restrict: np.ndarray=None, restriction: List[Tuple[str, float]]=None):
+    d_matrix = np.zeros((points.shape[0], points.shape[0]))
+    if restriction is None:
+        for idx, p in enumerate(points):
+            d_matrix[idx, :] = np.all(p >= points, axis=1) & np.all(p != points, axis=1)
+        d_matrix[np.diag_indices(points.shape[0])] = True
+        return d_matrix
+    restriction_matrix = np.column_stack([apply_restriction(restrict[:, k], restriction[k]) for k in range(len(restriction))])
+    valid_solutions = np.all(restriction_matrix, axis=1)
     for idx, p in enumerate(points):
-        d_matrix[idx, :] = np.all(p >= points, axis=1) & np.all(p != points, axis=1)
+        domination_mask = np.all(p >= points, axis=1) & np.all(p != points, axis=1)
+        if valid_solutions[idx]:
+            d_matrix[idx, :] = (valid_solutions[idx] != valid_solutions) | domination_mask
+        else:
+            d_matrix[idx, :] = (valid_solutions[idx] == valid_solutions) & domination_mask
     d_matrix[np.diag_indices(points.shape[0])] = True
     return d_matrix
 
@@ -152,41 +175,15 @@ def list_combinations(values: List, exclude_from: tuple=()):
         return values
     return combs
     
-
-'''
-def share_matrix(normalized_fit: np.ndarray, niche_size: float):
-    sh_matrix = distance_matrix(normalized_fit)
-    delta_mask = np.logical_and(0 <= sh_matrix, sh_matrix < niche_size)
-    sh_matrix[delta_mask] = 1 - (sh_matrix[delta_mask] / niche_size)
-    sh_matrix[np.logical_not(delta_mask)] = 0
-    return sh_matrix
-
-def point_fronts(points: np.ndarray, fit_scores: np.ndarray, domination_mx: np.ndarray=None):
-    domination_mx = domination_matrix(fit_scores) if domination_mx is None else np.copy(domination_mx)
-    fronts = []
-    total_point_count = 0
-    p_fronts = np.zeros(shape=points.shape[0], dtype='uint16')
-    while total_point_count < points.shape[0]:
-        actual_front = domination_mx.sum(axis=0) == 1
-        p_count = actual_front.sum()
-        p_fronts[actual_front] = len(fronts)
-        fronts.append((points[actual_front], fit_scores[actual_front],
-                       points.shape[0] - (p_count - 1) / 2 - total_point_count))
-        total_point_count += p_count
-        domination_mx = domination_mx[:, np.logical_not(actual_front)]
-    return fronts, p_fronts
-
-def point_ranges(points: np.ndarray, fit_scores: np.ndarray, domination_mx: np.ndarray=None):
-    if domination_mx is None:
-        domination_mx = domination_matrix(points)
-    p_ranges = domination_mx.sum(axis=0)
-    ranges = []
-    total_point_count = 0
-    for k in np.unique(p_ranges):
-        actual_front = p_ranges == k
-        p_count = actual_front.sum()
-        ranges.append((points[actual_front], fit_scores[actual_front],
-                       points.shape[0] - (p_count - 1) / 2 - total_point_count))
-        total_point_count += p_count
-    return ranges, p_ranges - 1
-'''
+def filter_restrictions(points: np.ndarray, restrictions: List[Tuple[float, float]]=None):
+    mask = np.ones(points.shape[0], dtype=bool)
+    if restrictions is None:
+        return mask
+    for idx, rest in enumerate(restrictions):
+        if rest is None:
+            continue
+        if rest[0] is not None:
+            mask = mask & (points[:, idx] >= rest[0])
+        if rest[1] is not None:
+            mask = mask & (points[:, idx] <= rest[1])
+    return mask

@@ -2,9 +2,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-def to_pd_dataframe(evolutive_metrics: list, include_values: tuple):
+def to_pd_dataframe(evolutive_metrics: list, exclude_values: tuple):
     filtered_evaluation = [
-        {key: dct[key] for key in dct if key in include_values}
+        {key: dct[key] for key in dct if key not in exclude_values}
         for dct in evolutive_metrics
     ]
     return pd.DataFrame(filtered_evaluation)

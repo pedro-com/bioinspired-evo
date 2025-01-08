@@ -6,7 +6,7 @@ from pymoo.indicators.gd_plus import GDPlus
 from pymoo.indicators.igd_plus import IGDPlus
 from pymoo.indicators.hv import HV
 
-from ..utils import distance_matrix, cluster_points
+from ..utils import distance_matrix, cluster_points, filter_restrictions
 import numpy as np
 
 class Metric(ABC):
@@ -53,22 +53,20 @@ class EvaluationMetric(Metric):
         return evaluation_metrics
 
 def gd_plus_metric(pareto_front: np.ndarray):
-    max_lim = pareto_front.max(axis=0)
-    min_lim = pareto_front.min(axis=0)
+    restrictions = np.column_stack([pareto_front.min(axis=0), pareto_front.max(axis=0)])
     gd_plus_eval = GDPlus(pareto_front)
     def gd_plus(points: np.ndarray, distance_mx: np.ndarray=None):
-        for idx in range(pareto_front.shape[1]):
-            points = points[(points[:, idx] >= min_lim[idx]) & (points[:, idx] <= max_lim[idx])]
+        points = points[filter_restrictions(points, restrictions)]
+        # for idx in range(pareto_front.shape[1]):
+        #     points = points[(points[:, idx] >= min_lim[idx]) & (points[:, idx] <= max_lim[idx])]
         return gd_plus_eval(points)
     return gd_plus
 
 def igd_plus_metric(pareto_front: np.ndarray):
-    max_lim = pareto_front.max(axis=0)
-    min_lim = pareto_front.min(axis=0)
+    restrictions = np.column_stack([pareto_front.min(axis=0), pareto_front.max(axis=0)])
     igd_plus_eval = IGDPlus(pareto_front)
     def igd_plus(points: np.ndarray, distance_mx: np.ndarray=None):
-        for idx in range(pareto_front.shape[1]):
-            points = points[(points[:, idx] >= min_lim[idx]) & (points[:, idx] <= max_lim[idx])]
+        points = points[filter_restrictions(points, restrictions)]
         return igd_plus_eval(points)
     return igd_plus
 
@@ -85,6 +83,7 @@ def hv_metric(reference_point: np.ndarray, maximize: Tuple[bool]):
 
 def save_min(line: np.ndarray):
     return line.min() if line.size > 0 else 0.
+
 def zitler_dispersion(points: np.ndarray=None, distance_mx:np.ndarray=None):
     '''
     Uniformity of a set of solutions (e.g., Pareto fronts). It ensures that the solutions are evenly spread out
@@ -159,6 +158,7 @@ class MultiObjectiveEvaluation(Metric):
     reference_point: List=None
     maximize: Tuple[bool]=None
     limits: Tuple=None
+    restrictions: bool = False
 
     def __post_init__(self):
         self.metric_funcs = {
@@ -178,6 +178,13 @@ class MultiObjectiveEvaluation(Metric):
     def evaluation_metric_names(self):
         return tuple(self.metric_funcs.keys())
 
+    def filter_limits(self, scores: np.ndarray):
+        if self.limits is None:
+            return scores
+        for idx, lims in enumerate(self.limits):
+            if lims != None:
+                scores = scores[(scores[:, idx] >= lims[0]) & (scores[:, idx] <= lims[1])]
+        return scores
     def evaluation(self, scores: np.ndarray, is_sorted: bool=True):
         if self.limits is not None:
             for idx, lims in enumerate(self.limits):
@@ -191,8 +198,12 @@ class MultiObjectiveEvaluation(Metric):
     def __call__(self, results: List):
         if len(results) == 0:
             return {}
-        eval_results = [sorted([tuple(self.evaluate(val)) for val in res]) for res in results]
-        res_lens = [len(res) for res in eval_results]
+        if self.restrictions:
+            eval_results = [sorted([tuple(self.evaluate(val)[0]) for val in res]) for res in results]
+        else:
+            eval_results = [sorted([tuple(self.evaluate(val)) for val in res]) for res in results]
+        filt_eval = [self.filter_limits(np.array(res)) for res in eval_results]
+        res_lens = [len(res) for res in filt_eval]
         k_cluster_points = min(res_lens)
         mean_points = sum(res_lens) / len(eval_results)
         mean_point_front = np.zeros((k_cluster_points, len(eval_results[0][0])))
@@ -203,7 +214,7 @@ class MultiObjectiveEvaluation(Metric):
             res_evaluation = self.evaluation(points)
             for k in mean_scores:
                 mean_scores[k] += res_evaluation[k]
-            mean_point_front += cluster_points(points, k_cluster_points)
+            mean_point_front += cluster_points(filt_eval[idx], k_cluster_points)
             res_evaluation["results"] = results[idx]
             res_evaluation["scores"] = e_results
             evaluation_results.append(res_evaluation)

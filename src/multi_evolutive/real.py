@@ -12,6 +12,7 @@ class RealMultiEvolutive(MultiEvolutive):
                  n_individuals: int,
                  value_range: Tuple[float, float],
                  maximize: Tuple[bool, ...],
+                 restrictions: List[Tuple[str, float]] = None,
                  gene_type: str="float64",
                  cromolength: int = None,
                  mutation: Union[str, Tuple[str], Mutation, MultiMutation] = "random-gene",
@@ -31,6 +32,8 @@ class RealMultiEvolutive(MultiEvolutive):
                  selection_pool: Union[SelectionPool, List[SelectionPool], List[Tuple[SelectionPool, float]]] = 'best',
                  selection_pool_size: float = 0.8,
                  steps_to_reduce_p_elite: int = 100,
+                 fit_penalization: List[Tuple[float, float]] = None,
+                 penalize_fit_restriction: float = 2.,
                  T_selection: int = 2,
                  evaluation_metrics: MultiObjectiveEvaluation = None
                  ):
@@ -71,6 +74,7 @@ class RealMultiEvolutive(MultiEvolutive):
             phenotype=phenotype,
             elitism=elitism,
             maximize=maximize,
+            restrictions=restrictions,
             front=front,
             penalization=penalization,
             niche_sharing_size=niche_sharing_size,
@@ -78,6 +82,8 @@ class RealMultiEvolutive(MultiEvolutive):
             selection_pool_size=selection_pool_size,
             steps_to_reduce_p_elite=steps_to_reduce_p_elite,
             T_selection=T_selection,
+            fit_penalization=fit_penalization,
+            penalize_fit_restriction=penalize_fit_restriction,
             evaluation_metrics=evaluation_metrics
         )
     

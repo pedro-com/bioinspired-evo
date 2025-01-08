@@ -12,7 +12,8 @@ from ..utils import (
     merge_sorted_lists,
     roulette_selection,
     section_selection,
-    probability_selection
+    probability_selection,
+    filter_restrictions
 )
 from ..evaluation import MultiObjectiveEvaluation
 from ..evolutive import Evolutive
@@ -33,6 +34,9 @@ class MultiEvolutive(Evolutive):
     niche_sharing_size: float = 0.8
     elitism: bool = False
     steps_to_reduce_p_elite: int = 100
+    fit_penalization: List[Tuple[float, float]] = None
+    penalize_fit_restriction: float = 2.
+    restrictions: List[Tuple[str, float]] = None
     evaluation_metrics: MultiObjectiveEvaluation = None
 
     def __post_init__(self):
@@ -44,9 +48,9 @@ class MultiEvolutive(Evolutive):
         p_range = domination_matrix(np.array([indv[1] for indv in p_elite])).sum(axis=0)
         return [p_elite[k] for k in np.flatnonzero(p_range == 1)]
 
-    def _front(self, fit_scores: np.ndarray):
+    def _front(self, fit_scores: np.ndarray, restrict: np.ndarray):
         front = probability_selection(self.front)
-        domination_mx = domination_matrix(fit_scores)
+        domination_mx = domination_matrix(fit_scores, restrict=restrict, restriction=self.restrictions)
         if front == 'front':
             return domination_mx, point_fronts(domination_mx)
         return domination_mx, domination_mx.sum(axis=0)
@@ -62,21 +66,29 @@ class MultiEvolutive(Evolutive):
     def _selection_pool(self, p_selection: List, n_ind: int):
         selection_pool = probability_selection(self.selection_pool)
         if selection_pool == 'best':
-            return sorted(p_selection, key=lambda v: v[2])[-n_ind:]
+            return sorted(p_selection, key=lambda v: v[-1])[-n_ind:]
         elif selection_pool == 'roulette':
-            return roulette_selection(p_selection, n_ind, weight_keys=lambda v: v[2])
+            return roulette_selection(p_selection, n_ind, weight_keys=lambda v: v[-1])
         elif selection_pool == 'section':
             return section_selection(p_selection, n_ind, point_keys=lambda v: v[1])
         return sample(p_selection, n_ind)
 
     def calculate_fit(self, fit: Tuple[Callable], population: List[np.ndarray], p_elite: List):
         # Obtain fit
-        fit_scores = np.array([fit(self.apply_phenotype(p)) for p in population]) * self.maximize_correction
+        if self.restrictions is not None:
+            scores = [fit(self.apply_phenotype(p)) for p in population]
+            fit_scores = np.array([sc[0] for sc in scores]) * self.maximize_correction
+            restrict = np.array([sc[1] for sc in scores])
+        else:
+            fit_scores = np.array([fit(self.apply_phenotype(p)) for p in population]) * self.maximize_correction
+            restrict = None
         if self.elitism and p_elite:
             population.extend(p[0] for p in p_elite)
             fit_scores = np.concatenate([fit_scores, np.array([p[1] for p in p_elite])], axis=0)
+            if self.restrictions is not None:
+                restrict = np.concatenate([restrict, np.array([p[2] for p in p_elite])], axis=0)
         # Obtain domination matrix and fronts
-        domination_mx, p_fronts = self._front(fit_scores)
+        domination_mx, p_fronts = self._front(fit_scores, restrict)
         strength_ranges = domination_mx.sum(axis=1)
         # Obtain penalization function
         penalization_func = self._penalization(fit_scores, p_fronts)
@@ -90,6 +102,12 @@ class MultiEvolutive(Evolutive):
             penalization = penalization_func(p_front)
             strength_fr = strength_ranges[p_front] / (total_points + 1)
             multi_fit = (fit_front + strength_fr) * penalization
+            if self.fit_penalization is not None:
+                rest_mask = filter_restrictions(fit_scores[p_front], self.fit_penalization)
+                multi_fit[rest_mask] /= self.penalize_fit_restriction
+            if restrict is not None:
+                yield [(population[p_idx], fit_scores[p_idx], restrict[p_idx], m_fit)
+                       for (p_idx, m_fit) in zip(np.flatnonzero(p_front), multi_fit) if m_fit > 0.]
             yield [(population[p_idx], fit_scores[p_idx], m_fit)
                    for (p_idx, m_fit) in zip(np.flatnonzero(p_front), multi_fit) if m_fit > 0.]
             # The last check is specific for functions that have near points with the same fit score
@@ -116,7 +134,7 @@ class MultiEvolutive(Evolutive):
         T_sample = sample(fit_population, k=self.T_selection)
         best_individual = T_sample[0]
         for individual in T_sample[1:]:
-            best_individual = max(best_individual, individual, key=lambda v: v[2])
+            best_individual = max(best_individual, individual, key=lambda v: v[-1])
         return best_individual[0]
 
     def selection(self, fit_population: List):
@@ -188,7 +206,20 @@ class MultiEvolutive(Evolutive):
 
     def calculate_metrics(self, fit_population: List):
         diversity, _ = self.calculate_diversity([indv[0] for indv in fit_population])
-        scores = np.array([indv[2] for indv in fit_population])
+        scores = np.array([indv[-1] for indv in fit_population])
+        if len(scores.shape) == 0:
+            return {
+                "fit": {
+                    "min": 0,
+                    "max": 0,
+                    "mean": 0,
+                },
+                "diversity": {
+                    "min": diversity.min(),
+                    "max": diversity.max(),
+                    "mean": np.mean(diversity),
+                }
+            }
         return {
             "fit": {
                 "min": scores.min(),
