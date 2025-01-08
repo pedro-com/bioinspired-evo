@@ -184,9 +184,10 @@ def plot_pareto_front_3d(pareto_front, obtained_results, algorithm_name=str, pro
     fig.add_trace(go.Scatter3d(x=obtained_results[:, 0], y=obtained_results[:, 1], z=[0]*obtained_results.shape[0], mode='markers', name=algorithm_name + ' Obtained Pareto'))
     fig.show()
 
-def plot_multiple_pareto_fronts(fronts_dict, title="Pareto Fronts Comparison", cmap='Dark2', ylim=None, xlim=None):
+def plot_multiple_pareto_fronts(fronts_dict, title="Pareto Fronts Comparison", cmap='Dark2', axs:plt.Axes=None, ylim=None, xlim=None):
     cmap = plt.get_cmap(cmap)
-    fig, axs= plt.subplots(1, 1, figsize=(10, 6))
+    if axs is None:
+        fig, axs= plt.subplots(1, 1, figsize=(10, 6))
     if ylim:
         axs.set_ylim(ylim[0], ylim[1])
     if xlim:
@@ -209,7 +210,7 @@ def plot_multiple_pareto_fronts(fronts_dict, title="Pareto Fronts Comparison", c
     # Plot each front with a different color and marker
     for i, (front_name, points) in enumerate(fronts_dict.items()):
         marker_idx = i % len(markers)  # Cycle through markers if more fronts than markers
-        plt.scatter(points[:, 0], 
+        axs.scatter(points[:, 0], 
                    points[:, 1],
                    c=[colors[i]], 
                    marker=markers[marker_idx],
@@ -217,12 +218,12 @@ def plot_multiple_pareto_fronts(fronts_dict, title="Pareto Fronts Comparison", c
                    label=front_name,
                    alpha=0.7)
     
-    plt.title(title)
-    plt.xlabel("Objective 1")
-    plt.ylabel("Objective 2")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.grid(True, linestyle='--', alpha=0.7)
+    axs.set_title(title)
+    axs.set_xlabel("Objective 1")
+    axs.set_ylabel("Objective 2")
+    axs.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    axs.grid(True, linestyle='--', alpha=0.7)
     
     # Adjust layout to prevent legend cutoff
-    plt.tight_layout()
-    plt.show()
+    if axs is None:
+        plt.tight_layout()
