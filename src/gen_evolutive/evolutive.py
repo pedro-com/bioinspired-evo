@@ -67,7 +67,7 @@ class GeneticEvolutive(Evolutive):
         # Obtain best individual
         best_individual = fit_population[-1]
         last_update = (0, best_individual[1])
-        for generation in range(n_generations + 1):
+        for generation in range(n_generations):
             # Metrics
             if obtain_metrics:
                 for metric, values in self.calculate_metrics(best_individual, fit_population).items():
@@ -121,6 +121,6 @@ class GeneticEvolutive(Evolutive):
                 "min": diversity.min(),
                 "max": diversity.max(),
                 "mean": np.mean(diversity),
-                "best": np.sqrt(np.sum((best_individual - centroid)**2, axis=0))
+                "best": np.sqrt(np.sum((best_individual[0] - centroid)**2, axis=0))
             }
         }

@@ -96,13 +96,12 @@ class MultiGeneticEvolutive:
     def __post_init__(self):
         if isinstance(self.evolutions, Evolutive):
             self.evolutions = (self.evolutions,)
-        assert self.n_generations_per_evo > 0, "Invalid number of generations, must be greater than 1"
 
     def n_generations_per_evolution(self, n_generations: int):
         if isinstance(self.n_generations_per_evo, int):
             n_gens = (n_generations // len(self.evolutions) if self.n_generations_per_evo <= 0 else
                       min(self.n_generations_per_evo, n_generations))
-            n_generations_evo = [self.n_generations_per_evo for _ in range(0, n_generations, n_gens)]
+            n_generations_evo = [n_gens for _ in range(0, n_generations, n_gens)]
             total_actual_gens = sum(n_generations_evo)
             if total_actual_gens < n_generations:
                 n_generations_evo.append(n_generations - total_actual_gens)
@@ -122,7 +121,7 @@ class MultiGeneticEvolutive:
         
     def evolution_it(self, n_generations: int):
         def evolutions():
-            n_evolutions = len(self.n_generations_per_evo)
+            n_evolutions = len(self.evolutions)
             for idx, n_generation in enumerate(self.n_generations_per_evolution(n_generations)):
                 yield self.evolutions[idx % n_evolutions], n_generation
         return evolutions()
@@ -143,10 +142,10 @@ class MultiGeneticEvolutive:
                     evolution_metrics.append(results["evolution_metrics"])
                 continue
             seed_population = results["best_cromosome"]
-            n_reintroduce = int(self.pop_to_reintroduce*evolution.n_population - len(seed_population))
-            if n_reintroduce <= 0:
+            n_reintroduce = int(self.pop_to_reintroduce * evolution.n_individuals - len(seed_population))
+            if n_reintroduce > 0:
                 seed_population.extend(sample(results["population"], n_reintroduce))
-            results = evolution(fit, n_generations_evo, target, trace, obtain_metrics, seed_population)
+            results = evolution.evolve(fit, n_generations_evo, target, trace, obtain_metrics, seed_population)
             if results["last_update"] != 0:
                 last_update = total_gens + results["last_update"]
             total_gens += n_generations_evo
@@ -157,7 +156,7 @@ class MultiGeneticEvolutive:
             results["evolution_metrics"] = evolution_metrics
         return results
     
-    def plot_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None, figsize=(12, 5)):
+    def plot_evolution_metrics(self, evolution_metrics: Dict, axs: Tuple[plt.Axes]=None, figsize=(12, 5)):
         fig, axs = plt.subplots(len(self.evolutions), 2, figsize=figsize)
         plt.subplots_adjust(hspace=1.25)
         for idx, ax_line in enumerate(axs):

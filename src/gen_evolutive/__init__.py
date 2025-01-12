@@ -1,4 +1,4 @@
-from .evolutive import GeneticEvolutive, MultiGeneticEvolutive
+from .evolutive import GeneticEvolutive
 from .alphabet import AlphabetEvolutive, PermutationEvolutive
 from .real import RealEvolutive
 
