@@ -105,4 +105,4 @@ for k in range(PUNTOS.shape[1]):
         - Foto comparando pareto con un buen resultado del nuestro
         - Foto comparando pareto + nsga2 + nuestro en una gráfica
 
-$$fit_f = \frac{2*(total_{indv} + \frac{indv_f - 1}{2} + \sum_{j=1}^{f - 1}indv_j)}{n_{indv} + 1}$$
+$$fit_f = \frac{2*(total_{indv} + \frac{indv_f - 1}{2} + \sum_{j=1}^{f - 1}indv_j)}{n_{indv} + 1}$$ 
