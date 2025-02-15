@@ -24,6 +24,7 @@ class RealEvolutive(GeneticEvolutive):
                  elitism: bool = False,
                  maximize: bool = True,
                  normalize: bool = False,
+                 n_threads: int = 8,
                  use_multithread: bool = False,
                  T_selection: int = 2
                  ):
@@ -65,6 +66,7 @@ class RealEvolutive(GeneticEvolutive):
             elitism=elitism,
             maximize=maximize,
             use_multithread=use_multithread,
+            n_threads=n_threads,
             T_selection=T_selection,
         )
     

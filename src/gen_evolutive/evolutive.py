@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 import numpy as np
-from typing import Tuple, Callable, Any, List, Type
+from typing import Tuple, Callable, List
 from random import sample
-from multiprocessing import Pool
+from loky import get_reusable_executor
 
 from ..evolutive import Evolutive
 
@@ -11,6 +11,7 @@ from ..evolutive import Evolutive
 class GeneticEvolutive(Evolutive):
     elitism: bool = False
     maximize: bool = True
+    n_threads: int = 8
     use_multithread: bool = False
 
     def fit_sort(self, fit: Callable, population: Tuple):
@@ -23,8 +24,8 @@ class GeneticEvolutive(Evolutive):
         if not self.use_multithread:
             fit_values = map(apply_fit, population)
         else:
-            with Pool(self.n_individuals) as p:
-                fit_values = p.map(apply_fit, population)
+            executor = get_reusable_executor(max_workers=self.n_threads, timeout=2)
+            fit_values = executor.map(apply_fit, population)
         return sorted(fit_values, key=lambda v: v[1], reverse=not self.maximize)
 
     def best_individual(self, indv1:Tuple, indv2:Tuple):

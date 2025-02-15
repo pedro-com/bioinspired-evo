@@ -23,6 +23,7 @@ class AlphabetEvolutive(GeneticEvolutive):
                  phenotype: Callable[[Tuple], Any] = lambda cromosome: cromosome,
                  elitism: bool = False,
                  maximize: bool = True,
+                 n_threads: int = 8,
                  use_multithread: bool = False,
                  T_selection: int = 2
                  ):
@@ -62,6 +63,7 @@ class AlphabetEvolutive(GeneticEvolutive):
             phenotype=phenotype,
             elitism=elitism,
             maximize=maximize,
+            n_threads=n_threads,
             use_multithread=use_multithread,
             T_selection=T_selection,
         )
